@@ -2,19 +2,15 @@
 //
 // Regra: apenas configurações PROGRAMADAS e NÃO UTILIZADAS podem ser editadas ou
 // excluídas. Atual/histórica ou utilizada → protegida (criar nova vigência).
-import type { KitsConfigStateKind, KitsConfigUsage } from '../types/kits-config.types';
+//
+// A lógica é genérica a qualquer regra com vigência mensal e vive em
+// `@/domain/vigencias`. Este módulo mantém os nomes usados pela feature.
+import {
+  canDeleteVigencia,
+  canEditVigencia,
+  vigenciaProtectionReason,
+} from '@/domain/vigencias/vigenciaProtecao';
 
-export function canEditConfig(state: KitsConfigStateKind, usage: KitsConfigUsage): boolean {
-  return state === 'programada' && !usage.utilizada;
-}
-
-export function canDeleteConfig(state: KitsConfigStateKind, usage: KitsConfigUsage): boolean {
-  return state === 'programada' && !usage.utilizada;
-}
-
-export function protectionReason(state: KitsConfigStateKind, usage: KitsConfigUsage): string | null {
-  if (canEditConfig(state, usage)) return null;
-  if (usage.utilizada) return 'Esta configuração já foi utilizada em processamentos. Para alterar a regra, crie uma nova vigência.';
-  if (state === 'atual') return 'Esta é a configuração vigente. Para alterar a regra, crie uma nova vigência.';
-  return 'Configuração histórica protegida. Para alterar a regra, crie uma nova vigência.';
-}
+export const canEditConfig = canEditVigencia;
+export const canDeleteConfig = canDeleteVigencia;
+export const protectionReason = vigenciaProtectionReason;

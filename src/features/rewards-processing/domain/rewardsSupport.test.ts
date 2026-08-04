@@ -17,6 +17,7 @@ const mkRes = (over: Partial<ResultadoPremiacao>): ResultadoPremiacao =>
 const emptyInputs = (over: Partial<RewardsPreviewInputs & { categorias: { id: string; nome: string }[] }>) => ({
   funcionarios: [], formulas: [], bases, setores: [], faltasAdvertencias: [], epiRecords: [],
   dssRecords: [], producaoSetor: [], indicadoresSetor: [], indicadoresGerais: [], getConfigKits: () => null,
+  getConfigBonusPercentual: () => null,
   categorias: [], ...over,
 });
 

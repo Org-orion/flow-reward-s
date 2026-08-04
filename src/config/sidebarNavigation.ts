@@ -2,7 +2,7 @@ import {
   LayoutDashboard, Users, Shield, HardHat, AlertTriangle, BarChart3, TrendingUp, PieChart,
   Settings, Building2, Layers, UserCog, Tag, Target, Factory, BarChart4, Gift,
   UserCheck, TrendingUpIcon, FileBarChart2, Briefcase, Shirt, PackagePlus, ClipboardCheck, Repeat2,
-  SlidersHorizontal, ArrowLeftRight, BellRing, Replace, Undo2, Boxes, Truck, History,
+  SlidersHorizontal, ArrowLeftRight, BellRing, Replace, Undo2, Boxes, Truck, History, Percent,
 } from 'lucide-react';
 import type { SidebarModuleId, SidebarNavItem, NavPermissionContext } from '@/types/navigation.types';
 
@@ -57,6 +57,7 @@ export const navigationByModule: Record<SidebarModuleId, SidebarNavItem[]> = {
         { id: 'cad-locais-dss', title: 'Locais DSS', href: '/premiacoes/cadastros/locais-dss', icon: Shield },
         { id: 'cad-formulas', title: 'Fórmulas de Cálculo', href: '/premiacoes/cadastros/formulas-calculo', icon: Settings },
         { id: 'cad-kits', title: 'Configurações Kits', href: '/premiacoes/cadastros/configuracoes-kits', icon: TrendingUpIcon },
+        { id: 'cad-bonus-pct', title: 'Bônus Percentual', href: '/premiacoes/cadastros/bonus-percentual', icon: Percent },
       ],
     },
     { id: 'usuarios', title: 'USUÁRIOS', href: '/cadastros/usuarios', icon: Users, adminOnly: true },

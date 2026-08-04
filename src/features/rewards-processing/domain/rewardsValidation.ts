@@ -18,7 +18,7 @@ function monthRange(competencia: string) {
 /** Constrói o resultado de validação para o escopo selecionado. */
 export function buildValidation(params: RewardsPreviewParams, inputs: ValidationInputs): ValidationResult {
   const { competencia, baseIds, categoriaIds } = params;
-  const { funcionarios, bases, formulas, setores, dssRecords, epiRecords, producaoSetor, indicadoresSetor, indicadoresGerais, getConfigKits } = inputs;
+  const { funcionarios, bases, formulas, setores, dssRecords, epiRecords, producaoSetor, indicadoresSetor, indicadoresGerais, getConfigKits, getConfigBonusPercentual } = inputs;
 
   const basesSel = bases.filter(b => baseIds.includes(b.id));
   const anyProducao = basesSel.some(b => isProducaoBase(b.nome));
@@ -54,10 +54,23 @@ export function buildValidation(params: RewardsPreviewParams, inputs: Validation
     configuracao.push({ code: 'formula_ok', severity: 'pronto', title: 'Fórmulas encontradas', description: 'Há fórmula aplicável para os funcionários elegíveis.', origin: 'Fórmulas de cálculo' });
   }
   if (anyKits) {
-    const cfg = getConfigKits(competencia);
-    configuracao.push(cfg
-      ? { code: 'kits_cfg_ok', severity: 'pronto', title: 'Configuração de kits vigente', description: 'Há configuração de kits para a competência.', origin: 'Configurações de kits' }
-      : { code: 'kits_cfg_fallback', severity: 'atencao', title: 'Configuração de kits ausente', description: 'Sem configuração vigente para a competência; o cálculo usará os parâmetros padrão (fallback).', origin: 'Configurações de kits', impact: 'Comissão de kits calculada com parâmetros padrão', action: { label: 'Ver configurações', to: '/premiacoes/cadastros/configuracoes-kits' } });
+    // Qual modelo remunera esta competência: percentual (proporcional) vence quando
+    // há configuração vigente; senão, faixas (degrau).
+    const cfgPercentual = getConfigBonusPercentual(competencia);
+    if (cfgPercentual) {
+      configuracao.push({
+        code: 'kits_modelo_percentual', severity: 'pronto',
+        title: 'Kits remunerados pelo bônus percentual',
+        description: `Meta de ${cfgPercentual.metaKits} kits, blocos de ${cfgPercentual.blocoKits} kits (100%) e cálculo proporcional. O modelo de faixas não é usado nesta competência.`,
+        origin: 'Bônus percentual por kits',
+        action: { label: 'Ver regra', to: '/premiacoes/cadastros/bonus-percentual' },
+      });
+    } else {
+      const cfg = getConfigKits(competencia);
+      configuracao.push(cfg
+        ? { code: 'kits_cfg_ok', severity: 'pronto', title: 'Configuração de kits vigente', description: 'Há configuração de kits para a competência.', origin: 'Configurações de kits' }
+        : { code: 'kits_cfg_fallback', severity: 'atencao', title: 'Configuração de kits ausente', description: 'Sem configuração vigente para a competência; o cálculo usará os parâmetros padrão (fallback).', origin: 'Configurações de kits', impact: 'Comissão de kits calculada com parâmetros padrão', action: { label: 'Ver configurações', to: '/premiacoes/cadastros/configuracoes-kits' } });
+    }
   }
 
   // ── FUNCIONÁRIOS ────────────────────────────────────────────────────────

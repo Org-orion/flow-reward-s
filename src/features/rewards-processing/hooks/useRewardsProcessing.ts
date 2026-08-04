@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useBasePremiacao } from '@/hooks/useBasePremiacao';
 import { useFuncionarios } from '@/hooks/useFuncionarios';
 import { useFormulasCalculo } from '@/hooks/useFormulasCalculo';
@@ -12,6 +12,8 @@ import { useSetores } from '@/hooks/useSetores';
 import { useIndicadoresSetor } from '@/hooks/useIndicadoresSetor';
 import { useIndicadoresGerais } from '@/hooks/useIndicadoresGerais';
 import { useConfiguracoesKits } from '@/hooks/useConfiguracoesKits';
+import { useConfiguracoesBonusPercentual } from '@/features/bonus-percentual/hooks/useConfiguracoesBonusPercentual';
+import type { BonusPercentualKitsInput } from '@/domain/premiacao/bonusPercentualKits';
 import type { RewardsPreviewInputs } from '../domain/rewardsPreview';
 
 /** Categorias elegíveis à premiação (mesmo conjunto usado no seletor legado). */
@@ -36,10 +38,31 @@ export function useRewardsProcessing() {
   const { indicadores: indicadoresSetor } = useIndicadoresSetor();
   const { indicadores: indicadoresGerais } = useIndicadoresGerais();
   const { getConfigParaCompetencia } = useConfiguracoesKits();
+  const { getConfigParaCompetencia: getConfigBonusPercentualDB } = useConfiguracoesBonusPercentual();
 
   const categoriasPremiaveis = useMemo(
     () => categorias.filter(c => CATEGORIAS_PREMIAVEIS.includes(c.nome.toUpperCase())),
     [categorias],
+  );
+
+  /**
+   * Traduz a configuração percentual (colunas do banco) para a entrada do motor.
+   * Quando não há configuração vigente na competência, devolve null e o motor
+   * mantém o modelo de faixas.
+   */
+  const getConfigBonusPercentual = useCallback(
+    (competencia: string): BonusPercentualKitsInput | null => {
+      const cfg = getConfigBonusPercentualDB(competencia);
+      if (!cfg) return null;
+      return {
+        metaKits: Number(cfg.meta_kits),
+        bonusMeta: Number(cfg.bonus_meta),
+        blocoKits: Number(cfg.bloco_kits),
+        valorBloco: Number(cfg.valor_bloco),
+        percentualMaximo: cfg.percentual_maximo == null ? null : Number(cfg.percentual_maximo),
+      };
+    },
+    [getConfigBonusPercentualDB],
   );
 
   const previewInputs = useMemo<RewardsPreviewInputs>(() => ({
@@ -47,7 +70,8 @@ export function useRewardsProcessing() {
     faltasAdvertencias, epiRecords, dssRecords, producaoSetor,
     indicadoresSetor, indicadoresGerais,
     getConfigKits: getConfigParaCompetencia,
-  }), [funcionarios, formulas, bases, setores, faltasAdvertencias, epiRecords, dssRecords, producaoSetor, indicadoresSetor, indicadoresGerais, getConfigParaCompetencia]);
+    getConfigBonusPercentual,
+  }), [funcionarios, formulas, bases, setores, faltasAdvertencias, epiRecords, dssRecords, producaoSetor, indicadoresSetor, indicadoresGerais, getConfigParaCompetencia, getConfigBonusPercentual]);
 
   return {
     bases, funcionarios, formulas, categorias, categoriasPremiaveis, setores,

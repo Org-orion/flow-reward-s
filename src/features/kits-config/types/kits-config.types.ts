@@ -14,25 +14,19 @@
 //     (10000/250/100/25).
 //   - Resultados NÃO fazem snapshot da config → editar afeta só o FUTURO.
 
-export type KitsConfigStateKind = 'programada' | 'atual' | 'historica';
+// Estado/período/utilização são genéricos a qualquer regra com vigência mensal e
+// vivem em `@/domain/vigencias`. Aqui ficam apenas os apelidos da feature.
+import type {
+  VigenciaEstado,
+  VigenciaEstadoKind,
+  VigenciaPeriodo,
+  VigenciaUso,
+} from '@/domain/vigencias/vigenciaTypes';
 
-export interface KitsConfigState {
-  state: KitsConfigStateKind;
-  label: string;
-  variant: 'success' | 'warning' | 'neutral';
-}
-
-export interface KitsConfigPeriod {
-  inicio: string;            // 'YYYY-MM' (vigencia_inicio)
-  fim: string | null;        // 'YYYY-MM' do mês anterior à próxima vigência; null = em diante/atual
-  emDiante: boolean;         // true quando não há próxima config
-}
-
-export interface KitsConfigUsage {
-  competencias: number;      // competências processadas cobertas por esta config
-  resultados: number;        // resultados de premiação nessas competências
-  utilizada: boolean;
-}
+export type KitsConfigStateKind = VigenciaEstadoKind;
+export type KitsConfigState = VigenciaEstado;
+export type KitsConfigPeriod = VigenciaPeriodo;
+export type KitsConfigUsage = VigenciaUso;
 
 export interface KitsConfigRow {
   id: string;

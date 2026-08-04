@@ -20,6 +20,10 @@ import {
   calcularNotaDss, calcularNotaProducao, calcularNotaGeral, calcularBonus,
   extractKitsMultiplier, isProducaoBase, isKitsBase, normalize,
 } from '@/domain/premiacao/calculoPremiacao';
+import {
+  calcularBonusPercentualKits, type BonusPercentualKitsInput,
+} from '@/domain/premiacao/bonusPercentualKits';
+import { formatPercentBR } from '@/lib/formatters';
 import { formatCurrencyBRL } from '@/lib/formatters';
 import type {
   BasePreview, RewardResult, RewardsPreview, TraceEntry, PreviewTotals,
@@ -52,6 +56,14 @@ export interface RewardsPreviewInputs {
   indicadoresSetor: IndicadorSetor[];
   indicadoresGerais: IndicadorGeralRow[];
   getConfigKits: (competencia: string) => ConfiguracaoKits | null;
+  /**
+   * Configuração de BÔNUS PERCENTUAL vigente na competência, ou null.
+   *
+   * É o seletor de modelo para as bases de kits: havendo configuração percentual,
+   * ela substitui o cálculo por faixas (`calcularComissao`). A virada é definida
+   * pela vigência cadastrada — não há data fixa no código.
+   */
+  getConfigBonusPercentual: (competencia: string) => BonusPercentualKitsInput | null;
 }
 
 export interface RewardsPreviewParams {
@@ -74,7 +86,7 @@ function computeEmployeeReward(
 ): RewardResult {
   const {
     formulas, bases, setores, faltasAdvertencias, epiRecords, dssRecords,
-    producaoSetor, indicadoresSetor, indicadoresGerais, getConfigKits,
+    producaoSetor, indicadoresSetor, indicadoresGerais, getConfigKits, getConfigBonusPercentual,
   } = inputs;
   const flags: string[] = [];
 
@@ -213,8 +225,15 @@ function computeEmployeeReward(
     ? indicadoresGerais.find(i => i.tipo_indicador?.codigo === 'KITS' && i.competencia === dataInicio)
     : null;
   const realizadoKits = kitsMes?.realizado || 0;
+
+  // Seleção do modelo de remuneração de kits: percentual (proporcional) quando há
+  // configuração vigente na competência; senão, faixas (degrau) como antes.
+  const configPercentual = isKitsGeracao ? getConfigBonusPercentual(competencia) : null;
+  const bonusPercentual = configPercentual ? calcularBonusPercentualKits(realizadoKits, configPercentual) : null;
   const configKits = getConfigKits(competencia) || FALLBACK_CONFIG;
-  const valorKits = isKitsGeracao ? calcularComissao(realizadoKits, configKits) : undefined;
+  const valorKits = isKitsGeracao
+    ? (bonusPercentual ? bonusPercentual.bonusTotal : calcularComissao(realizadoKits, configKits))
+    : undefined;
   const multiplicadorKits = isKitsGeracao ? extractKitsMultiplier(baseSelecionada?.nome) : 1.0;
   const { bonusPossivel, bonusAlcancado } = calcularBonus({ notaGeral, valorFaixa, valorFixo, isKitsGeracao, valorKits, multiplicadorKits });
 
@@ -236,7 +255,31 @@ function computeEmployeeReward(
   trace.push({ key: 'nota_geral', label: 'Nota geral', nota: fmtNota(notaGeral), observacao: 'Resultado ponderado pela fórmula (motor de premiação).' });
   trace.push({ key: 'valor_faixa', label: 'Valor da faixa', entrada: formatCurrencyBRL(valorFaixa) });
   if (valorFixo) trace.push({ key: 'valor_fixo', label: 'Valor fixo', entrada: formatCurrencyBRL(valorFixo) });
-  if (isKitsGeracao) trace.push({ key: 'kits', label: 'Kits', entrada: `${realizadoKits} kits · multiplicador ${multiplicadorKits}`, observacao: `Comissão: ${formatCurrencyBRL(valorKits ?? 0)}` });
+  if (isKitsGeracao) {
+    trace.push({ key: 'kits', label: 'Kits', entrada: `${realizadoKits} kits · multiplicador ${multiplicadorKits}`, observacao: `Comissão: ${formatCurrencyBRL(valorKits ?? 0)}` });
+    if (bonusPercentual) {
+      const b = bonusPercentual;
+      trace.push({
+        key: 'kits_percentual',
+        label: 'Percentual de kits',
+        entrada: b.atingiuMeta
+          ? `${formatPercentBR(b.percentualAplicado)} · ${formatCurrencyBRL(b.adicional)}`
+          : 'Meta não atingida — 0%',
+        observacao: b.atingiuMeta
+          ? `Excedente de ${b.excedente} kits sobre a meta de ${b.meta}, em blocos de ${b.blocoKits} (proporcional).`
+            + ` Bônus da meta ${formatCurrencyBRL(b.bonusMetaAplicado)} + adicional ${formatCurrencyBRL(b.adicional)}.`
+            + (b.tetoAplicado ? ` Percentual bruto de ${formatPercentBR(b.percentual)} limitado ao teto de ${formatPercentBR(b.percentualMaximo)}.` : '')
+          : `Meta de ${b.meta} kits não alcançada.`,
+      });
+    } else {
+      trace.push({
+        key: 'kits_modelo',
+        label: 'Modelo de kits',
+        entrada: 'Faixas (degrau)',
+        observacao: `Sem configuração de bônus percentual vigente em ${competencia}; comissão calculada por faixas completas.`,
+      });
+    }
+  }
   trace.push({ key: 'bonus_possivel', label: 'Bônus possível', entrada: formatCurrencyBRL(bonusPossivel) });
   trace.push({ key: 'bonus_alcancado', label: 'Bônus alcançado', entrada: formatCurrencyBRL(bonusAlcancado) });
 
