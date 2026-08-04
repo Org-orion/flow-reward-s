@@ -163,3 +163,15 @@ Todas as cores em HSL seguindo especificação do usuário
     @apply data-[state=checked]:bg-success;
   }
 }
+
+@layer utilities {
+  /* Rolagem sem barra visível (sidebar, listas internas) */
+  .scrollbar-hide {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+}

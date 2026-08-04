@@ -210,7 +210,7 @@ export const AppSidebar = () => {
         </div>
 
         {/* Navegação */}
-        <nav className="flex-1 space-y-0.5 overflow-y-auto px-3 py-3">
+        <nav className="scrollbar-hide flex-1 space-y-0.5 overflow-y-auto px-3 py-3">
           {nav.map((item) => (item.children ? renderGroup(item) : renderLeaf(item)))}
         </nav>
 
