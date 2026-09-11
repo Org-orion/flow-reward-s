@@ -17,11 +17,13 @@ interface Props {
   serie: GeneralHistoryRow[];  // pontos do mesmo indicador (asc), para o mini-histórico
   onClose: () => void;
   onEdit: (row: GeneralHistoryRow) => void;
+  /** Permissão de editar o registro (ver src/config/permissions.ts). */
+  podeEditar?: boolean;
   onCompare: (row: GeneralHistoryRow) => void;
 }
 
 /** Drawer de detalhes de um registro — leitura, comparação e histórico recente. */
-export function GeneralIndicatorDrawer({ row, serie, onClose, onEdit, onCompare }: Props) {
+export function GeneralIndicatorDrawer({ row, serie, onClose, onEdit, onCompare, podeEditar = true }: Props) {
   const anterior = useMemo(() => {
     if (!row) return null;
     return serie.filter((p) => p.competencia < row.competencia).sort((a, b) => (a.competencia < b.competencia ? 1 : -1))[0] ?? null;
@@ -84,7 +86,7 @@ export function GeneralIndicatorDrawer({ row, serie, onClose, onEdit, onCompare 
         </div>
 
         <div className="flex items-center gap-2 border-t border-border/60 px-5 py-3">
-          <Button variant="outline" className="flex-1 gap-1.5" onClick={() => onEdit(row)}><Pencil className="h-4 w-4" /> Editar registro</Button>
+          {podeEditar && <Button variant="outline" className="flex-1 gap-1.5" onClick={() => onEdit(row)}><Pencil className="h-4 w-4" /> Editar registro</Button>}
           <Button variant="ghost" className="flex-1 gap-1.5" onClick={() => onCompare(row)}><GitCompareArrows className="h-4 w-4" /> Comparar período</Button>
         </div>
       </SheetContent>

@@ -4,19 +4,25 @@ import { OCCURRENCE_VIEWS, type OccurrenceView } from '@/features/occurrences/vi
 interface Props {
   active: OccurrenceView;
   onChange: (v: OccurrenceView) => void;
+  /** Visões permitidas ao usuário. Ausente = todas. */
+  disponiveis?: OccurrenceView[];
 }
 
 /** Navegação horizontal das 4 visões. Ativa: verde institucional + branco. */
-export function OccurrencesNavigation({ active, onChange }: Props) {
+export function OccurrencesNavigation({ active, onChange, disponiveis }: Props) {
+  const views = disponiveis ? OCCURRENCE_VIEWS.filter((v) => disponiveis.includes(v.key)) : OCCURRENCE_VIEWS;
+
   const onKeyDown = (e: React.KeyboardEvent) => {
-    const i = OCCURRENCE_VIEWS.findIndex((v) => v.key === active);
-    if (e.key === 'ArrowRight' && i < OCCURRENCE_VIEWS.length - 1) { e.preventDefault(); onChange(OCCURRENCE_VIEWS[i + 1].key); }
-    if (e.key === 'ArrowLeft' && i > 0) { e.preventDefault(); onChange(OCCURRENCE_VIEWS[i - 1].key); }
+    const i = views.findIndex((v) => v.key === active);
+    if (e.key === 'ArrowRight' && i < views.length - 1) { e.preventDefault(); onChange(views[i + 1].key); }
+    if (e.key === 'ArrowLeft' && i > 0) { e.preventDefault(); onChange(views[i - 1].key); }
   };
+
+  if (views.length <= 1) return null;
 
   return (
     <nav role="tablist" aria-label="Visões da apuração" onKeyDown={onKeyDown} className="flex gap-1.5 overflow-x-auto pb-0.5">
-      {OCCURRENCE_VIEWS.map((v) => {
+      {views.map((v) => {
         const isActive = v.key === active;
         const Icon = v.icon;
         return (

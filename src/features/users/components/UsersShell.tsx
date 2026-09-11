@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useUsers } from '../hooks/useUsers';
+import { usePerfisAcesso } from '../hooks/usePerfisAcesso';
 import { normalizeUsersView } from '../views';
 import type { UsersView as ViewKey, UserRow } from '../types/user.types';
 import type { SectionKey } from '@/contexts/AuthContext';
@@ -14,17 +15,20 @@ import { UserStatusDialog } from './UserStatusDialog';
 import { UserPasswordResetDialog } from './UserPasswordResetDialog';
 import { UsersView } from '../pages/UsersView';
 import { AccessMatrixView } from '../pages/AccessMatrixView';
+import { PerfisAcessoView } from '../pages/PerfisAcessoView';
 import type { UserRowHandlers } from './UsersTable';
 
 /**
- * Central de Usuários e Acessos — 2 visões (?view=usuarios|acessos). Shell único:
- * dados uma vez; hospeda editor (criação em 2 etapas + edição), acessos,
+ * Central de Usuários e Acessos — 3 visões (?view=usuarios|acessos|perfis).
+ * Shell único: dados uma vez; hospeda editor (criação em 2 etapas + edição),
+ * acessos (seções + permissões granulares), perfis de acesso reutilizáveis,
  * status e redefinição de senha. Reusa o hook seguro `useUsuarios` (RPCs
  * endurecidas + reautenticação server-side). Não altera AuthContext/RLS/motor;
  * nunca lê/expõe senha_hash. Guardas de UI para último admin/autodesativação.
  */
 export function UsersShell() {
   const data = useUsers();
+  const perfisAcesso = usePerfisAcesso();
   const [searchParams, setSearchParams] = useSearchParams();
   const view = normalizeUsersView(searchParams.get('view'));
 
@@ -62,6 +66,13 @@ export function UsersShell() {
       <div key={view} className="animate-in fade-in slide-in-from-right-2 duration-200 motion-reduce:animate-none">
         {view === 'acessos' ? (
           <AccessMatrixView rows={data.rows} onEditAccess={(r) => setAccessTarget(r)} />
+        ) : view === 'perfis' ? (
+          <PerfisAcessoView
+            perfis={perfisAcesso.perfis} loading={perfisAcesso.loading} rows={data.rows}
+            onCreate={(v) => perfisAcesso.createPerfil({ nome: v.nome, descricao: v.descricao || null, permissoes: v.permissoes })}
+            onUpdate={(id, v) => perfisAcesso.updatePerfil(id, { nome: v.nome, descricao: v.descricao || null, permissoes: v.permissoes, ativo: v.ativo })}
+            onDelete={(id) => perfisAcesso.deletePerfil(id)}
+          />
         ) : (
           <UsersView rows={data.rows} secInputs={data.secInputs} currentUserId={data.currentUserId} handlers={handlers} />
         )}
@@ -84,7 +95,13 @@ export function UsersShell() {
 
       <UserAccessDialog
         row={accessTarget} onOpenChange={(o) => { if (!o) setAccessTarget(null); }}
-        onSave={async (id, secoes) => { await data.updateUsuario(id, { secoes: secoes as SectionKey[] }); }}
+        onSave={async (id, p) => {
+          await data.updateUsuario(id, {
+            secoes: p.secoes as SectionKey[],
+            perfil_acesso_id: p.perfilAcessoId,
+            permissoes: p.excecoes,
+          });
+        }}
       />
 
       <UserStatusDialog

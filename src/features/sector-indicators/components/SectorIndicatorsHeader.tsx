@@ -14,6 +14,8 @@ interface Props {
   onSave: () => void;
   onVerIndicadoresGerais: () => void;
   children?: ReactNode; // navegação + seletor de competência
+  /** Permissão de alterar algum campo — esconde o botão de salvar. */
+  podeSalvar?: boolean;
 }
 
 /**
@@ -23,6 +25,7 @@ interface Props {
  */
 export function SectorIndicatorsHeader({
   competencia, setoresCount, lastSaved, isDirty, changedCount, saving, onSave, onVerIndicadoresGerais, children,
+  podeSalvar = true,
 }: Props) {
   return (
     <div className="rounded-2xl border border-border/70 bg-card px-5 py-4 shadow-[var(--shadow-card)]">
@@ -51,10 +54,12 @@ export function SectorIndicatorsHeader({
             <Button variant="outline" size="sm" className="h-8 gap-1.5" onClick={onVerIndicadoresGerais}>
               <BarChart3 className="h-4 w-4" /> Ver Indicadores Gerais
             </Button>
-            <Button size="sm" className="h-8 gap-1.5" onClick={onSave} disabled={!isDirty || saving}>
-              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-              {saving ? 'Salvando...' : 'Salvar'}
-            </Button>
+            {podeSalvar && (
+              <Button size="sm" className="h-8 gap-1.5" onClick={onSave} disabled={!isDirty || saving}>
+                {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                {saving ? 'Salvando...' : 'Salvar'}
+              </Button>
+            )}
           </div>
         </div>
 

@@ -11,7 +11,7 @@ import { hasAnomaly } from '../domain/indicatorDataQuality';
 import type { GeneralHistoryRow } from '../types/general-indicators.types';
 import type { GeneralPageProps } from './_shared';
 
-export function GeneralIndicatorsHistory({ data, historyRows, onOpenDrawer, onEdit, onGoToEvolution }: GeneralPageProps) {
+export function GeneralIndicatorsHistory({ data, historyRows, onOpenDrawer, onEdit, onGoToEvolution, acesso }: GeneralPageProps) {
   const filtersState = useGeneralIndicatorFilters(historyRows);
   const rows = filtersState.filtered;
 
@@ -58,6 +58,8 @@ export function GeneralIndicatorsHistory({ data, historyRows, onOpenDrawer, onEd
                 rows={filtersState.paged}
                 onOpenDrawer={onOpenDrawer}
                 onEdit={handleEdit}
+                podeEditar={acesso.podeEditar}
+                podeExcluir={acesso.podeExcluir}
                 onCompare={(row) => onGoToEvolution(row.tipoId)}
                 onDelete={handleDelete}
               />

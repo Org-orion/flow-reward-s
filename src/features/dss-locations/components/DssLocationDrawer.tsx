@@ -5,6 +5,7 @@ import { formatNumberBR, formatPercentBR, pluralizeBR } from '@/lib/formatters';
 import { formatDateBR } from '@/lib/dateTime';
 import { DssLocationStatus } from './DssLocationStatus';
 import type { DssLocationRow } from '../types/dss-location.types';
+import { useResourceAccess } from '@/hooks/useResourceAccess';
 
 interface Props {
   row: DssLocationRow | null;
@@ -16,6 +17,7 @@ interface Props {
 }
 
 export function DssLocationDrawer({ row, onClose, onEdit, onVerFuncionarios, onRegistrarDss, onVerHistorico }: Props) {
+  const acesso = useResourceAccess('cad_locais_dss');
   if (!row) return <Sheet open={false} onOpenChange={() => {}}><SheetContent /></Sheet>;
   const r = row;
   const u = r.usage;
@@ -78,7 +80,9 @@ export function DssLocationDrawer({ row, onClose, onEdit, onVerFuncionarios, onR
         </div>
 
         <div className="border-t border-border/60 px-5 py-3">
-          <Button className="w-full gap-1.5" onClick={() => onEdit(r)}><Pencil className="h-4 w-4" /> Editar local</Button>
+          {acesso.podeEditar && (
+            <Button className="w-full gap-1.5" onClick={() => onEdit(r)}><Pencil className="h-4 w-4" /> Editar local</Button>
+          )}
         </div>
       </SheetContent>
     </Sheet>

@@ -6,6 +6,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
   AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { useResourceAccess } from '@/hooks/useResourceAccess';
 
 interface Props {
   titulo: string;
@@ -20,6 +21,7 @@ interface Props {
 export function DssActionsMenu({ titulo, onView, onEdit, onDuplicate, onGenerateReport, onDelete }: Props) {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const acesso = useResourceAccess('dss');
 
   const handleDelete = async () => {
     if (deleting) return;
@@ -42,13 +44,17 @@ export function DssActionsMenu({ titulo, onView, onEdit, onDuplicate, onGenerate
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-52">
           <DropdownMenuItem onClick={onView}><Eye className="mr-2 h-4 w-4" /> Ver detalhes</DropdownMenuItem>
-          <DropdownMenuItem onClick={onEdit}><Pencil className="mr-2 h-4 w-4" /> Editar</DropdownMenuItem>
-          <DropdownMenuItem onClick={onDuplicate}><Copy className="mr-2 h-4 w-4" /> Duplicar como novo</DropdownMenuItem>
+          {acesso.podeEditar && <DropdownMenuItem onClick={onEdit}><Pencil className="mr-2 h-4 w-4" /> Editar</DropdownMenuItem>}
+          {acesso.podeCriar && <DropdownMenuItem onClick={onDuplicate}><Copy className="mr-2 h-4 w-4" /> Duplicar como novo</DropdownMenuItem>}
           <DropdownMenuItem onClick={onGenerateReport}><FileText className="mr-2 h-4 w-4" /> Gerar relatório</DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={() => setConfirmOpen(true)} className="text-destructive focus:text-destructive">
-            <Trash2 className="mr-2 h-4 w-4" /> Excluir
-          </DropdownMenuItem>
+          {acesso.podeExcluir && (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => setConfirmOpen(true)} className="text-destructive focus:text-destructive">
+                <Trash2 className="mr-2 h-4 w-4" /> Excluir
+              </DropdownMenuItem>
+            </>
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
 

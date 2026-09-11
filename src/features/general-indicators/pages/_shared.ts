@@ -20,4 +20,13 @@ export interface GeneralPageProps {
   onEdit: (registroId: string) => void;
   onGoToView: (v: GeneralIndicatorView) => void;
   onGoToEvolution: (tipoId: string) => void;
+  /** Permissões desta tela (ver src/config/permissions.ts). */
+  acesso: GeneralIndicatorsAccess;
+}
+
+/** O que o usuário pode fazer nos Indicadores Gerais. */
+export interface GeneralIndicatorsAccess {
+  podeCriar: boolean;
+  podeEditar: boolean;
+  podeExcluir: boolean;
 }

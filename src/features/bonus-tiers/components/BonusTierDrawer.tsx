@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { formatCurrencyBRL, pluralizeBR } from '@/lib/formatters';
 import { BonusTierRegistrationStatus } from './BonusTierRegistrationStatus';
 import type { BonusTierRow } from '../types/bonus-tier.types';
+import { useResourceAccess } from '@/hooks/useResourceAccess';
 
 interface Props {
   row: BonusTierRow | null;
@@ -21,6 +22,7 @@ function qualidadeMsg(row: BonusTierRow): { tone: 'info' | 'warn'; text: string 
 }
 
 export function BonusTierDrawer({ row, onClose, onEdit, onVinculos }: Props) {
+  const acesso = useResourceAccess('cad_faixas');
   if (!row) return <Sheet open={false} onOpenChange={() => {}}><SheetContent /></Sheet>;
   const r = row;
   const q = qualidadeMsg(r);
@@ -68,7 +70,9 @@ export function BonusTierDrawer({ row, onClose, onEdit, onVinculos }: Props) {
         </div>
 
         <div className="border-t border-border/60 px-5 py-3">
-          <Button className="w-full gap-1.5" onClick={() => onEdit(r)}><Pencil className="h-4 w-4" /> Editar faixa</Button>
+          {acesso.podeEditar && (
+            <Button className="w-full gap-1.5" onClick={() => onEdit(r)}><Pencil className="h-4 w-4" /> Editar faixa</Button>
+          )}
         </div>
       </SheetContent>
     </Sheet>

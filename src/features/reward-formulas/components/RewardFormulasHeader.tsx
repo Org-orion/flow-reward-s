@@ -1,10 +1,12 @@
 import { Calculator, Plus } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
+import { useResourceAccess } from '@/hooks/useResourceAccess';
 
 interface Props { onNovaFormula: () => void; children?: ReactNode }
 
 export function RewardFormulasHeader({ onNovaFormula, children }: Props) {
+  const acesso = useResourceAccess('cad_formulas_calculo');
   return (
     <div className="rounded-2xl border border-border/70 bg-card px-5 py-4 shadow-[var(--shadow-card)]">
       <div className="flex flex-col gap-3">
@@ -18,7 +20,9 @@ export function RewardFormulasHeader({ onNovaFormula, children }: Props) {
               <p className="text-xs text-muted-foreground">Configure os pesos, critérios e combinações usados no cálculo das premiações.</p>
             </div>
           </div>
-          <Button size="sm" className="h-8 gap-1.5" onClick={onNovaFormula}><Plus className="h-4 w-4" /> Nova fórmula</Button>
+          {acesso.podeCriar && (
+            <Button size="sm" className="h-8 gap-1.5" onClick={onNovaFormula}><Plus className="h-4 w-4" /> Nova fórmula</Button>
+          )}
         </div>
         {children && <div className="border-t border-border/60 pt-3">{children}</div>}
       </div>

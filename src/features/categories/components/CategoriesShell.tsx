@@ -16,6 +16,7 @@ import { CategoryDeleteDialog } from './CategoryDeleteDialog';
 import { CategoriesSkeleton } from './CategoriesSkeleton';
 import { CategoriesEmptyState } from './CategoriesEmptyState';
 import type { CategoryRow } from '../types/category.types';
+import { useResourceAccess } from '@/hooks/useResourceAccess';
 
 /**
  * Gestão de Categorias — página única. Shell orquestrador: carrega dados uma vez,
@@ -23,6 +24,7 @@ import type { CategoryRow } from '../types/category.types';
  * Exclusão é soft e bloqueada com vínculos ativos. Não altera o banco nem o motor.
  */
 export function CategoriesShell() {
+  const acesso = useResourceAccess('cad_categorias');
   const data = useCategories();
   const navigate = useNavigate();
   const state = useCategoryFilters(data.rows);
@@ -59,7 +61,7 @@ export function CategoriesShell() {
           icon={Tags}
           title="Nenhuma categoria cadastrada"
           description="Cadastre categorias para classificar e premiar os funcionários."
-          action={<Button size="sm" className="gap-1.5" onClick={openNova}><Plus className="h-4 w-4" /> Nova categoria</Button>}
+          action={acesso.podeCriar ? <Button size="sm" className="gap-1.5" onClick={openNova}><Plus className="h-4 w-4" /> Nova categoria</Button> : undefined}
         />
       ) : (
         <>

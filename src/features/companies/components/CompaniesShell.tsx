@@ -16,6 +16,7 @@ import { CompanyDeleteDialog } from './CompanyDeleteDialog';
 import { CompaniesSkeleton } from './CompaniesSkeleton';
 import { CompaniesEmptyState } from './CompaniesEmptyState';
 import type { CompanyRow } from '../types/company.types';
+import { useResourceAccess } from '@/hooks/useResourceAccess';
 
 /**
  * Gestão de Empresas — página única. Shell orquestrador: carrega dados uma vez,
@@ -24,6 +25,7 @@ import type { CompanyRow } from '../types/company.types';
  * Não altera o banco.
  */
 export function CompaniesShell() {
+  const acesso = useResourceAccess('cad_empresas');
   const data = useCompanies();
   const navigate = useNavigate();
   const state = useCompanyFilters(data.rows);
@@ -57,7 +59,7 @@ export function CompaniesShell() {
           icon={Building2}
           title="Nenhuma empresa cadastrada"
           description="Cadastre a empresa para organizar setores, funcionários e a estrutura do sistema."
-          action={<Button size="sm" className="gap-1.5" onClick={openNova}><Plus className="h-4 w-4" /> Nova empresa</Button>}
+          action={acesso.podeCriar ? <Button size="sm" className="gap-1.5" onClick={openNova}><Plus className="h-4 w-4" /> Nova empresa</Button> : undefined}
         />
       ) : (
         <>

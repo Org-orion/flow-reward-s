@@ -1,10 +1,12 @@
 import { Coins, Plus } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
+import { useResourceAccess } from '@/hooks/useResourceAccess';
 
 interface Props { onNovaBase: () => void; children?: ReactNode }
 
 export function RewardBasesHeader({ onNovaBase, children }: Props) {
+  const acesso = useResourceAccess('cad_base_premiacao');
   return (
     <div className="rounded-2xl border border-border/70 bg-card px-5 py-4 shadow-[var(--shadow-card)]">
       <div className="flex flex-col gap-3">
@@ -18,7 +20,9 @@ export function RewardBasesHeader({ onNovaBase, children }: Props) {
               <p className="text-xs text-muted-foreground">Gestão das bases, parâmetros e vínculos usados no cálculo das premiações.</p>
             </div>
           </div>
-          <Button size="sm" className="h-8 gap-1.5" onClick={onNovaBase}><Plus className="h-4 w-4" /> Nova base</Button>
+          {acesso.podeCriar && (
+            <Button size="sm" className="h-8 gap-1.5" onClick={onNovaBase}><Plus className="h-4 w-4" /> Nova base</Button>
+          )}
         </div>
         {children && <div className="border-t border-border/60 pt-3">{children}</div>}
       </div>

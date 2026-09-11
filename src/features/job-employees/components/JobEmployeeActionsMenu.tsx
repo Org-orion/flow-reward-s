@@ -4,6 +4,7 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import type { JobEmployeeRow } from '../types/job-employee.types';
+import { useResourceAccess } from '@/hooks/useResourceAccess';
 
 export interface EmployeeRowHandlers {
   onOpen: (r: JobEmployeeRow) => void;
@@ -21,6 +22,7 @@ interface Props {
 
 /** Menu contextual — nenhuma ação exposta na linha. Só ações funcionais. */
 export function JobEmployeeActionsMenu({ row, temCargos, handlers }: Props) {
+  const acesso = useResourceAccess('cs_funcionarios');
   const enquadrado = row.cargo != null;
   return (
     <DropdownMenu>
@@ -33,8 +35,8 @@ export function JobEmployeeActionsMenu({ row, temCargos, handlers }: Props) {
         <DropdownMenuItem onClick={() => handlers.onOpen(row)}><Eye className="mr-2 h-4 w-4" /> Ver detalhes</DropdownMenuItem>
         {temCargos && (
           enquadrado
-            ? <DropdownMenuItem onClick={() => handlers.onAssign(row)}><RefreshCw className="mr-2 h-4 w-4" /> Alterar cargo</DropdownMenuItem>
-            : <DropdownMenuItem onClick={() => handlers.onAssign(row)}><Link2 className="mr-2 h-4 w-4" /> Vincular cargo</DropdownMenuItem>
+            ? acesso.podeEditar && <DropdownMenuItem onClick={() => handlers.onAssign(row)}><RefreshCw className="mr-2 h-4 w-4" /> Alterar cargo</DropdownMenuItem>
+            : acesso.podeEditar && <DropdownMenuItem onClick={() => handlers.onAssign(row)}><Link2 className="mr-2 h-4 w-4" /> Vincular cargo</DropdownMenuItem>
         )}
         {enquadrado && <DropdownMenuItem onClick={() => handlers.onViewCargo(row)}><Briefcase className="mr-2 h-4 w-4" /> Ver cargo</DropdownMenuItem>}
         <DropdownMenuItem onClick={() => handlers.onHistory(row)}><History className="mr-2 h-4 w-4" /> Ver histórico</DropdownMenuItem>

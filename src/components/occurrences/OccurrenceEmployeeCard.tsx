@@ -5,6 +5,7 @@ import type { OccurrenceEntry, OccurrenceRowKind } from '@/features/occurrences/
 import { QuantityStepper } from './QuantityStepper';
 import { OccurrenceStatusBadge } from './OccurrenceStatusBadge';
 import { cn } from '@/lib/utils';
+import { useResourceAccess } from '@/hooks/useResourceAccess';
 
 const initialsOf = (nome: string) => nome.split(' ').filter(Boolean).slice(0, 2).map((p) => p[0]?.toUpperCase()).join('') || '?';
 
@@ -24,6 +25,7 @@ interface Props {
 export function OccurrenceEmployeeCard({
   funcionario: f, entry, baselineEntry, status, selected, onToggleSelect, onChangeFaltas, onChangeAdvertencias, onRestore,
 }: Props) {
+  const acesso = useResourceAccess('faltas_advertencias');
   return (
     <div className={cn('rounded-xl border border-border/70 bg-card p-4', status === 'alterado' && 'border-status-warning/40 bg-status-warning/[0.03]')}>
       <div className="flex items-start gap-3">
@@ -41,11 +43,11 @@ export function OccurrenceEmployeeCard({
       <div className="mt-3 grid grid-cols-2 gap-3">
         <div>
           <p className="mb-1.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Faltas</p>
-          <QuantityStepper value={entry.faltas} previous={baselineEntry?.faltas} onChange={onChangeFaltas} onRestore={onRestore} label={`Faltas de ${f.nome}`} className="scale-110 origin-left" />
+          <QuantityStepper value={entry.faltas} previous={baselineEntry?.faltas} onChange={onChangeFaltas} onRestore={onRestore} label={`Faltas de ${f.nome}`} className="scale-110 origin-left" readOnly={!acesso.podeEditarCampo('faltas')} />
         </div>
         <div>
           <p className="mb-1.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Advertências</p>
-          <QuantityStepper value={entry.advertencias} previous={baselineEntry?.advertencias} onChange={onChangeAdvertencias} onRestore={onRestore} label={`Advertências de ${f.nome}`} className="scale-110 origin-left" />
+          <QuantityStepper value={entry.advertencias} previous={baselineEntry?.advertencias} onChange={onChangeAdvertencias} onRestore={onRestore} label={`Advertências de ${f.nome}`} className="scale-110 origin-left" readOnly={!acesso.podeEditarCampo('advertencias')} />
         </div>
       </div>
     </div>

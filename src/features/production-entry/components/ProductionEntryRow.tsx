@@ -6,6 +6,7 @@ import { formatNumberBR, formatPercentBR } from '@/lib/formatters';
 import { ProductionNumberInput } from './ProductionNumberInput';
 import { ProductionStatusBadge } from './ProductionStatusBadge';
 import type { ProductionRow } from '../types/production-entry.types';
+import type { ProductionFieldAccess } from '../domain/productionFieldAccess';
 
 interface Props {
   row: ProductionRow;
@@ -15,6 +16,8 @@ interface Props {
   onRestore: () => void;
   onOpenDrawer: () => void;
   onEnterNext?: () => void;
+  /** Permissões de campo (ver src/config/permissions.ts). */
+  campos: ProductionFieldAccess;
 }
 
 const fmtDesvio = (d: number | null) => {
@@ -23,7 +26,7 @@ const fmtDesvio = (d: number | null) => {
   return d > 0 ? `+${s}` : d < 0 ? `−${s}` : s;
 };
 
-export function ProductionEntryRow({ row, changed, comparing, onChangeField, onRestore, onOpenDrawer, onEnterNext }: Props) {
+export function ProductionEntryRow({ row, changed, comparing, onChangeField, onRestore, onOpenDrawer, onEnterNext, campos }: Props) {
   return (
     <TableRow className={cn(changed && 'bg-status-warning/[0.04]', row.situacao === 'pendente' && !changed && 'bg-muted/20')}>
       <TableCell>
@@ -33,28 +36,36 @@ export function ProductionEntryRow({ row, changed, comparing, onChangeField, onR
         </button>
       </TableCell>
 
-      <TableCell className="text-right">
-        <ProductionNumberInput value={row.meta} changed={changed} ariaLabel={`Meta do setor ${row.setorNome}`} onCommit={(v) => onChangeField('meta', v)} onEnterNext={onEnterNext} />
-        {comparing && <p className="mt-0.5 text-[11px] text-muted-foreground">ant.: {row.metaAnterior != null ? formatNumberBR(row.metaAnterior) : '—'}</p>}
-      </TableCell>
+      {campos.verMeta && (
+        <TableCell className="text-right">
+          <ProductionNumberInput value={row.meta} changed={changed} ariaLabel={`Meta do setor ${row.setorNome}`} onCommit={(v) => onChangeField('meta', v)} onEnterNext={onEnterNext} readOnly={!campos.editarMeta} />
+          {comparing && <p className="mt-0.5 text-[11px] text-muted-foreground">ant.: {row.metaAnterior != null ? formatNumberBR(row.metaAnterior) : '—'}</p>}
+        </TableCell>
+      )}
 
-      <TableCell className="text-right">
-        <ProductionNumberInput value={row.realizado} changed={changed} ariaLabel={`Produção realizada do setor ${row.setorNome}`} onCommit={(v) => onChangeField('realizado', v)} onEnterNext={onEnterNext} />
-        {comparing && <p className="mt-0.5 text-[11px] text-muted-foreground">ant.: {row.realizadoAnterior != null ? formatNumberBR(row.realizadoAnterior) : '—'}</p>}
-      </TableCell>
+      {campos.verRealizado && (
+        <TableCell className="text-right">
+          <ProductionNumberInput value={row.realizado} changed={changed} ariaLabel={`Produção realizada do setor ${row.setorNome}`} onCommit={(v) => onChangeField('realizado', v)} onEnterNext={onEnterNext} readOnly={!campos.editarRealizado} />
+          {comparing && <p className="mt-0.5 text-[11px] text-muted-foreground">ant.: {row.realizadoAnterior != null ? formatNumberBR(row.realizadoAnterior) : '—'}</p>}
+        </TableCell>
+      )}
 
-      <TableCell className="text-right text-sm font-semibold tabular-nums">
-        {row.percentual != null ? formatPercentBR(row.percentual, 1) : '—'}
-        {comparing && row.variacaoRealizado != null && (
-          <p className={cn('mt-0.5 text-[11px]', row.variacaoRealizado >= 0 ? 'text-success' : 'text-destructive')}>
-            {row.variacaoRealizado >= 0 ? '+' : ''}{formatNumberBR(row.variacaoRealizado, 1)}% vs. ant.
-          </p>
-        )}
-      </TableCell>
+      {campos.verDerivados && (
+        <TableCell className="text-right text-sm font-semibold tabular-nums">
+          {row.percentual != null ? formatPercentBR(row.percentual, 1) : '—'}
+          {comparing && row.variacaoRealizado != null && (
+            <p className={cn('mt-0.5 text-[11px]', row.variacaoRealizado >= 0 ? 'text-success' : 'text-destructive')}>
+              {row.variacaoRealizado >= 0 ? '+' : ''}{formatNumberBR(row.variacaoRealizado, 1)}% vs. ant.
+            </p>
+          )}
+        </TableCell>
+      )}
 
-      <TableCell className={cn('text-right text-sm tabular-nums', row.desvio != null && row.desvio < 0 ? 'text-destructive' : 'text-foreground')}>
-        {fmtDesvio(row.desvio)}
-      </TableCell>
+      {campos.verDerivados && (
+        <TableCell className={cn('text-right text-sm tabular-nums', row.desvio != null && row.desvio < 0 ? 'text-destructive' : 'text-foreground')}>
+          {fmtDesvio(row.desvio)}
+        </TableCell>
+      )}
 
       <TableCell><ProductionStatusBadge situacao={row.situacao} /></TableCell>
 

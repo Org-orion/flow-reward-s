@@ -6,6 +6,7 @@ import type { OccurrenceEntry, OccurrenceRowKind } from '@/features/occurrences/
 import { QuantityStepper } from './QuantityStepper';
 import { OccurrenceStatusBadge } from './OccurrenceStatusBadge';
 import { cn } from '@/lib/utils';
+import { useResourceAccess } from '@/hooks/useResourceAccess';
 
 const initialsOf = (nome: string) => nome.split(' ').filter(Boolean).slice(0, 2).map((p) => p[0]?.toUpperCase()).join('') || '?';
 
@@ -24,6 +25,7 @@ interface Props {
 export function OccurrenceEmployeeRow({
   funcionario: f, entry, baselineEntry, status, selected, onToggleSelect, onChangeFaltas, onChangeAdvertencias, onRestore,
 }: Props) {
+  const acesso = useResourceAccess('faltas_advertencias');
   return (
     <TableRow className={cn(status === 'alterado' && 'bg-status-warning/[0.04]', status === 'erro' && 'bg-destructive/[0.04]')}>
       <TableCell className="w-10">
@@ -55,6 +57,7 @@ export function OccurrenceEmployeeRow({
           onChange={onChangeFaltas}
           onRestore={onRestore}
           label={`Faltas de ${f.nome}`}
+          readOnly={!acesso.podeEditarCampo('faltas')}
         />
       </TableCell>
 
@@ -65,6 +68,7 @@ export function OccurrenceEmployeeRow({
           onChange={onChangeAdvertencias}
           onRestore={onRestore}
           label={`Advertências de ${f.nome}`}
+          readOnly={!acesso.podeEditarCampo('advertencias')}
         />
       </TableCell>
 

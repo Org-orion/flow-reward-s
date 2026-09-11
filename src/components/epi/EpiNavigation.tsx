@@ -4,18 +4,24 @@ import { EPI_VIEWS, type EpiView } from '@/features/epi/views';
 interface Props {
   active: EpiView;
   onChange: (v: EpiView) => void;
+  /** Visões permitidas ao usuário. Ausente = todas. */
+  disponiveis?: EpiView[];
 }
 
-export function EpiNavigation({ active, onChange }: Props) {
+export function EpiNavigation({ active, onChange, disponiveis }: Props) {
+  const views = disponiveis ? EPI_VIEWS.filter((v) => disponiveis.includes(v.key)) : EPI_VIEWS;
+
   const onKeyDown = (e: React.KeyboardEvent) => {
-    const i = EPI_VIEWS.findIndex((v) => v.key === active);
-    if (e.key === 'ArrowRight' && i < EPI_VIEWS.length - 1) { e.preventDefault(); onChange(EPI_VIEWS[i + 1].key); }
-    if (e.key === 'ArrowLeft' && i > 0) { e.preventDefault(); onChange(EPI_VIEWS[i - 1].key); }
+    const i = views.findIndex((v) => v.key === active);
+    if (e.key === 'ArrowRight' && i < views.length - 1) { e.preventDefault(); onChange(views[i + 1].key); }
+    if (e.key === 'ArrowLeft' && i > 0) { e.preventDefault(); onChange(views[i - 1].key); }
   };
+
+  if (views.length <= 1) return null;
 
   return (
     <nav role="tablist" aria-label="Visões de EPI" onKeyDown={onKeyDown} className="flex gap-1.5 overflow-x-auto pb-0.5">
-      {EPI_VIEWS.map((v) => {
+      {views.map((v) => {
         const isActive = v.key === active;
         const Icon = v.icon;
         return (

@@ -4,10 +4,30 @@ import {
   navigationByModule, resolveSidebarModule, moduleHome,
   isItemActive, isGroupActive, filterNavigation, activeGroupIds,
 } from './sidebarNavigation';
+import { resourceDef } from './permissions';
 
-const ctxAdmin = { isAdmin: true, canAccess: () => true };
-const ctxNone = { isAdmin: false, canAccess: () => false };
-const ctxSome = (secs: SectionKey[]) => ({ isAdmin: false, canAccess: (s: SectionKey) => secs.includes(s) });
+const ctxAdmin = { isAdmin: true, canAccess: () => true, can: () => true, isGranular: false };
+const ctxNone = { isAdmin: false, canAccess: () => false, can: () => false, isGranular: false };
+// Usuário LEGADO: `can(recurso)` equivale a ter a seção do recurso — é
+// exatamente o que o motor faz (ver domain/permissions/effectiveAccess.ts), e
+// aqui usamos o registro real para não duplicar o mapa recurso→seção.
+const ctxSome = (secs: SectionKey[]) => ({
+  isAdmin: false,
+  canAccess: (s: SectionKey) => secs.includes(s),
+  can: (resource: string) => {
+    const section = resourceDef(resource)?.section;
+    return !!section && secs.includes(section as SectionKey);
+  },
+  isGranular: false,
+});
+
+/** Usuário GRANULAR: só enxerga as telas cujos recursos foram concedidos. */
+const ctxGranular = (recursos: string[]) => ({
+  isAdmin: false,
+  canAccess: () => true,
+  can: (resource: string) => recursos.includes(resource),
+  isGranular: true,
+});
 
 const byId = (items: { id: string }[]) => items.map((i) => i.id);
 
@@ -94,6 +114,30 @@ describe('filterNavigation — reflete permissões existentes', () => {
       const nav = filterNavigation(navigationByModule['controle-estoque'], ctxAdmin);
       expect(byId(nav)).toContain('ce-cadastros');
       expect(byId(nav)).toContain('ce-grp-estoque');
+    });
+  });
+
+  describe('usuário granular — filtra tela por tela', () => {
+    it('mostra apenas os cadastros concedidos', () => {
+      const nav = filterNavigation(navigationByModule.premiacoes, ctxGranular(['cad_setores', 'cad_faixas']));
+      expect(byId(nav)).toEqual(['cadastros']);
+      expect(nav[0].children?.map((c) => c.id)).toEqual(['cad-setores', 'cad-faixas']);
+    });
+
+    it('some com o grupo inteiro quando nenhuma tela dele é concedida', () => {
+      const nav = filterNavigation(navigationByModule.premiacoes, ctxGranular(['dss']));
+      expect(byId(nav)).toEqual(['sesmt']);
+      expect(nav[0].children?.map((c) => c.id)).toEqual(['sesmt-dss']);
+    });
+
+    it('sem nenhum recurso concedido, a navegação fica vazia', () => {
+      expect(filterNavigation(navigationByModule.premiacoes, ctxGranular([]))).toHaveLength(0);
+      expect(filterNavigation(navigationByModule['controle-estoque'], ctxGranular([]))).toHaveLength(0);
+    });
+
+    it('em Cargos e Salários, filtra por tela mesmo sem gate de seção', () => {
+      const nav = filterNavigation(navigationByModule['cargos-salarios'], ctxGranular(['cs_cargos']));
+      expect(byId(nav)).toEqual(['cs-cargos']);
     });
   });
 });

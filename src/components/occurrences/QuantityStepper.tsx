@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Minus, Plus, RotateCcw } from 'lucide-react';
+import { Lock, Minus, Plus, RotateCcw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { sanitizeQuantity } from '@/features/occurrences/domain/occurrenceValidation';
 
@@ -10,10 +10,12 @@ interface QuantityStepperProps {
   onRestore?: () => void;
   label: string; // para aria-label, ex.: "Faltas de João Silva"
   className?: string;
+  /** Sem permissão para alterar este campo — mostra o valor, não edita. */
+  readOnly?: boolean;
 }
 
 /** Controle reutilizável de quantidade: [-] valor [+]. Inteiro, nunca negativo, com restauração. */
-export function QuantityStepper({ value, previous, onChange, onRestore, label, className }: QuantityStepperProps) {
+export function QuantityStepper({ value, previous, onChange, onRestore, label, className, readOnly }: QuantityStepperProps) {
   const [text, setText] = useState(String(value));
   useEffect(() => { setText(String(value)); }, [value]);
 
@@ -25,6 +27,19 @@ export function QuantityStepper({ value, previous, onChange, onRestore, label, c
     if (e.key === 'ArrowDown') { e.preventDefault(); onChange(Math.max(0, value - 1)); }
     if (e.key === 'Enter') { e.preventDefault(); commit(text); (e.target as HTMLInputElement).blur(); }
   };
+
+  if (readOnly) {
+    return (
+      <span
+        aria-label={`${label} (somente leitura)`}
+        title="Você não tem permissão para alterar este campo."
+        className={cn('inline-flex h-7 w-11 items-center justify-center gap-1 rounded-md text-sm font-semibold tabular-nums text-muted-foreground', className)}
+      >
+        <Lock className="h-3 w-3 shrink-0 opacity-60" aria-hidden />
+        {value}
+      </span>
+    );
+  }
 
   return (
     <div className={cn('inline-flex items-center gap-1', className)}>

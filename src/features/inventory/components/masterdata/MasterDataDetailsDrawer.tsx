@@ -7,6 +7,7 @@ import { StatusBadge } from '@/components/app/StatusBadge';
 import { cn } from '@/lib/utils';
 import { formatDateTimeBR } from '@/lib/dateTime';
 import { ativoDe, tituloRegistro, type MasterCtx, type Row, type TabConfig } from './masterShared';
+import { useResourceAccess } from '@/hooks/useResourceAccess';
 
 interface Props {
   row: Row | null;
@@ -32,6 +33,7 @@ const acoesContextuais: Partial<Record<TabConfig['key'], { label: string; icon: 
 };
 
 export function MasterDataDetailsDrawer({ row, cfg, ctx, isAdmin, onOpenChange, onEdit, onInativar, onReativar, onExcluir }: Props) {
+  const acesso = useResourceAccess('est_cadastros');
   const navigate = useNavigate();
   const ativo = row ? ativoDe(row) : true;
   const Icon = cfg.icon;
@@ -140,11 +142,11 @@ export function MasterDataDetailsDrawer({ row, cfg, ctx, isAdmin, onOpenChange, 
 
             {/* Rodapé de ações */}
             <div className="flex flex-wrap items-center justify-end gap-2 border-t border-border/60 p-4">
-              {isAdmin && <Button variant="ghost" className="mr-auto gap-1.5 text-destructive hover:text-destructive" onClick={() => onExcluir(row)}><Trash2 className="h-4 w-4" /> Excluir</Button>}
-              {ativo
+              {isAdmin && acesso.podeExcluir && <Button variant="ghost" className="mr-auto gap-1.5 text-destructive hover:text-destructive" onClick={() => onExcluir(row)}><Trash2 className="h-4 w-4" /> Excluir</Button>}
+              {acesso.podeEditar && (ativo
                 ? <Button variant="outline" className="gap-1.5" onClick={() => onInativar(row)}><PowerOff className="h-4 w-4" /> Inativar</Button>
-                : <Button variant="outline" className="gap-1.5" onClick={() => onReativar(row)}><Power className="h-4 w-4" /> Reativar</Button>}
-              <Button className="gap-1.5" onClick={() => onEdit(row)}><Pencil className="h-4 w-4" /> Editar</Button>
+                : <Button variant="outline" className="gap-1.5" onClick={() => onReativar(row)}><Power className="h-4 w-4" /> Reativar</Button>)}
+              {acesso.podeEditar && <Button className="gap-1.5" onClick={() => onEdit(row)}><Pencil className="h-4 w-4" /> Editar</Button>}
             </div>
           </>
         )}

@@ -17,10 +17,17 @@ interface Props {
   onAdd: (faltasDelta: number, advertenciasDelta: number) => void;
   onZerar: () => void;
   onClear: () => void;
+  /** Permissão no campo `faltas` (ver src/config/permissions.ts). */
+  podeFaltas?: boolean;
+  /** Permissão no campo `advertencias`. */
+  podeAdvertencias?: boolean;
 }
 
 /** Barra contextual de seleção em massa. Operações que sobrescrevem exigem confirmação. */
-export function OccurrencesBulkBar({ count, busy, onSetFaltas, onSetAdvertencias, onAdd, onZerar, onClear }: Props) {
+export function OccurrencesBulkBar({
+  count, busy, onSetFaltas, onSetAdvertencias, onAdd, onZerar, onClear,
+  podeFaltas = true, podeAdvertencias = true,
+}: Props) {
   const [confirmZerar, setConfirmZerar] = useState(false);
   if (count === 0) return null;
 
@@ -30,11 +37,13 @@ export function OccurrencesBulkBar({ count, busy, onSetFaltas, onSetAdvertencias
       {busy && <Loader2 className="h-4 w-4 animate-spin text-primary" />}
 
       <div className="ml-auto flex flex-wrap items-center gap-2">
-        <SetPopover label="Definir faltas" onConfirm={onSetFaltas} count={count} disabled={busy} />
-        <SetPopover label="Definir advertências" onConfirm={onSetAdvertencias} count={count} disabled={busy} />
-        <AddPopover onConfirm={onAdd} disabled={busy} />
+        {podeFaltas && <SetPopover label="Definir faltas" onConfirm={onSetFaltas} count={count} disabled={busy} />}
+        {podeAdvertencias && <SetPopover label="Definir advertências" onConfirm={onSetAdvertencias} count={count} disabled={busy} />}
+        {podeFaltas && podeAdvertencias && <AddPopover onConfirm={onAdd} disabled={busy} />}
 
-        <Button variant="outline" size="sm" className="h-8" onClick={() => setConfirmZerar(true)} disabled={busy}>Zerar valores</Button>
+        {podeFaltas && podeAdvertencias && (
+          <Button variant="outline" size="sm" className="h-8" onClick={() => setConfirmZerar(true)} disabled={busy}>Zerar valores</Button>
+        )}
         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onClear} aria-label="Cancelar seleção"><X className="h-4 w-4" /></Button>
       </div>
 

@@ -14,6 +14,7 @@ import { AdjustmentWarnings } from '../components/adjustment/AdjustmentWarnings'
 import { ReciboEntregaDialog } from '../components/ReciboEntregaDialog';
 import { getEntregaRecibo, type ReciboEntrega } from '../services/inventoryApi';
 import type { AjusteAviso } from '../hooks/useStockAdjustment';
+import { useResourceAccess } from '@/hooks/useResourceAccess';
 
 const chip = 'inline-flex items-center gap-1 rounded-full bg-muted/60 px-2 py-0.5 text-[11px] text-muted-foreground';
 
@@ -21,6 +22,10 @@ export function TrocaView() {
   const navigate = useNavigate();
   const x = useStockExchange();
   const [revisar, setRevisar] = useState(false);
+
+  // Permissões desta tela (ver src/config/permissions.ts).
+  const acesso = useResourceAccess('est_troca');
+  const podeRegistrar = acesso.podeCriar;
   const [termo, setTermo] = useState(false);
   const [recibo, setRecibo] = useState<ReciboEntrega | null>(null);
 
@@ -49,7 +54,8 @@ export function TrocaView() {
     };
   }, [x.entrega, x.varianteDevolvida, x.varianteNova, x.mesmaVariante, x.qtdValida, x.funcionario, x.fardDevolvida, x.fardNova, x.qtd, x.saldoDevolvida, x.saldoDevolvidaFinal, x.saldoNova, x.saldoNovaFinal, x.motivo, x.financeiro, x.usuario]);
 
-  const confirmar = async () => { const ok = await x.confirmar(); if (ok) setRevisar(false); };
+  const confirmar = async () => {
+    if (!podeRegistrar) return; const ok = await x.confirmar(); if (ok) setRevisar(false); };
   const verRecibo = async (id: string) => { try { setRecibo(await getEntregaRecibo(id)); } catch { /* toast global */ } };
 
   const acoes = (
@@ -104,15 +110,15 @@ export function TrocaView() {
 
           <SectionCard title="Revisão e confirmação" description="Revise antes de registrar a troca.">
             <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between">
-              <p className="text-sm text-muted-foreground">{x.podeRevisar ? 'Tudo pronto — revise antes de confirmar.' : 'Selecione a entrega, item devolvido, novo item (diferente), quantidade e motivo.'}</p>
-              <Button size="lg" className="gap-2" disabled={!x.podeRevisar || x.saving} onClick={() => setRevisar(true)}>{x.saving && <Loader2 className="h-4 w-4 animate-spin" />} Revisar troca</Button>
+              <p className="text-sm text-muted-foreground">{!podeRegistrar ? 'Você tem acesso de consulta a esta tela, mas não tem permissão para registrar a operação.' : x.podeRevisar ? 'Tudo pronto — revise antes de confirmar.' : 'Selecione a entrega, item devolvido, novo item (diferente), quantidade e motivo.'}</p>
+              <Button size="lg" className="gap-2" disabled={!podeRegistrar || !x.podeRevisar || x.saving} onClick={() => setRevisar(true)}>{x.saving && <Loader2 className="h-4 w-4 animate-spin" />} Revisar troca</Button>
             </div>
             {x.erro && <p className="mt-2 text-sm text-destructive">{x.erro}</p>}
           </SectionCard>
         </div>
       </div>
 
-      <StockExchangeReviewDialog open={revisar} onOpenChange={setRevisar} saving={x.saving} onConfirm={confirmar} dados={revisao} />
+      <StockExchangeReviewDialog open={revisar && podeRegistrar} onOpenChange={setRevisar} saving={x.saving} onConfirm={confirmar} dados={revisao} />
       <StockExchangeSuccessDialog recibo={x.sucesso} itemNovo={x.fardNova?.variante.nome ?? '—'} onOpenChange={(o) => { if (!o) x.reset(); }}
         onNova={x.reset} onVerMovimentacoes={() => navigate('/controle-estoque/movimentacoes')} onVoltar={() => navigate('/controle-estoque/fardamentos')} />
       <ExchangeTermPreviewDialog open={termo} onOpenChange={setTermo} colaborador={x.funcionario?.nome ?? '—'} itemNovo={x.fardNova?.variante.nome ?? '—'} itemNovoTam={x.fardNova?.tamanhoRotulo ?? ''} qtd={x.qtdValida ? x.qtd : 0} motivo={x.motivo} unidade={unidadeNome ?? '—'} reciboAnterior={x.entrega?.recibo ?? '—'} />

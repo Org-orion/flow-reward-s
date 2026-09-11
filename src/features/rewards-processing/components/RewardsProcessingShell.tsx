@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useRewardsProcessing } from '../hooks/useRewardsProcessing';
 import { normalizeRewardsView, type RewardsView } from '../views';
@@ -8,6 +8,7 @@ import { RewardsSkeleton } from './RewardsSkeleton';
 import { NewRewardsProcessingView, type ProcessingSeed } from '../pages/NewRewardsProcessingView';
 import { RewardsProcessingsView } from '../pages/RewardsProcessingsView';
 import { RewardsIssuesView } from '../pages/RewardsIssuesView';
+import { useResourceAccess } from '@/hooks/useResourceAccess';
 
 /**
  * Central de Processamento de Premiações — 3 visões (?view=novo|processamentos|
@@ -19,10 +20,25 @@ export function RewardsProcessingShell() {
   const data = useRewardsProcessing();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const view = normalizeRewardsView(searchParams.get('view'));
   const [seed, setSeed] = useState<ProcessingSeed | null>(null);
 
-  const setView = (v: RewardsView) => { const sp = new URLSearchParams(searchParams); sp.set('view', v); setSearchParams(sp); };
+  // Permissões desta tela (ver src/config/permissions.ts). "Novo Processamento"
+  // é a ação de processar; sem ela sobram as visões de consulta.
+  const acesso = useResourceAccess('gerar_premiacoes');
+  const viewsPermitidas = useMemo<RewardsView[]>(() => {
+    const vs: RewardsView[] = [];
+    if (acesso.pode('processar')) vs.push('novo');
+    vs.push('processamentos', 'inconsistencias');
+    return vs;
+  }, [acesso]);
+
+  const viewSolicitada = normalizeRewardsView(searchParams.get('view'));
+  const view = viewsPermitidas.includes(viewSolicitada) ? viewSolicitada : viewsPermitidas[0];
+
+  const setView = (v: RewardsView) => {
+    if (!viewsPermitidas.includes(v)) return;
+    const sp = new URLSearchParams(searchParams); sp.set('view', v); setSearchParams(sp);
+  };
 
   const openReport = (p?: { competencia?: string; baseId?: string }) => {
     const sp = new URLSearchParams();
@@ -40,7 +56,7 @@ export function RewardsProcessingShell() {
   return (
     <div className="mx-auto w-full max-w-[1800px] space-y-[18px]">
       <RewardsProcessingHeader onOpenReport={() => openReport()}>
-        <RewardsProcessingNavigation active={view} onChange={setView} />
+        <RewardsProcessingNavigation active={view} onChange={setView} disponiveis={viewsPermitidas} />
       </RewardsProcessingHeader>
 
       <div key={view} className="animate-in fade-in slide-in-from-right-2 duration-200 motion-reduce:animate-none">

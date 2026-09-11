@@ -1,9 +1,11 @@
 import { Tags, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useResourceAccess } from '@/hooks/useResourceAccess';
 
 interface Props { onNovaCategoria: () => void }
 
 export function CategoriesHeader({ onNovaCategoria }: Props) {
+  const acesso = useResourceAccess('cad_categorias');
   return (
     <div className="rounded-2xl border border-border/70 bg-card px-5 py-4 shadow-[var(--shadow-card)]">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -16,7 +18,9 @@ export function CategoriesHeader({ onNovaCategoria }: Props) {
             <p className="text-xs text-muted-foreground">Organize as categorias usadas na classificação e premiação dos funcionários.</p>
           </div>
         </div>
-        <Button size="sm" className="h-8 gap-1.5" onClick={onNovaCategoria}><Plus className="h-4 w-4" /> Nova categoria</Button>
+        {acesso.podeCriar && (
+          <Button size="sm" className="h-8 gap-1.5" onClick={onNovaCategoria}><Plus className="h-4 w-4" /> Nova categoria</Button>
+        )}
       </div>
     </div>
   );

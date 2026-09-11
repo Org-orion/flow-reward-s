@@ -14,7 +14,20 @@ export interface Usuario {
   // Usado apenas para DERIVAR o estado de autenticação (Supabase/legado/migração).
   // NÃO é secreto e NUNCA é exibido cru na interface. senha_hash jamais é lido.
   auth_user_id?: string | null;
+  // Permissões granulares (ver src/config/permissions.ts). Ambos nulos = usuário
+  // LEGADO, governado apenas por `secoes`.
+  perfil_acesso_id?: string | null;
+  permissoes?: UserExcecoes | null;
 }
+
+/** Exceções de permissão do usuário sobre o perfil de acesso. */
+export interface UserExcecoes {
+  mais?: string[];
+  menos?: string[];
+}
+
+/** Colunas que existem desde antes das permissões granulares. */
+const COLUNAS_BASE = 'id, email, nome, perfil, secoes, ativo, created_at, updated_at, auth_user_id';
 
 export function useUsuarios() {
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
@@ -22,10 +35,22 @@ export function useUsuarios() {
 
   async function fetchUsuarios() {
     setLoading(true);
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('concremrh_usuarios')
-      .select('id, email, nome, perfil, secoes, ativo, created_at, updated_at, auth_user_id')
+      .select(`${COLUNAS_BASE}, perfil_acesso_id, permissoes`)
       .order('nome');
+
+    if (error) {
+      // A migração das permissões granulares pode não ter sido aplicada ainda
+      // (20260910000000_permissoes_granulares.sql). Sem este fallback a lista de
+      // usuários ficaria VAZIA até o banco ser atualizado.
+      console.warn('Colunas de permissões granulares indisponíveis; lendo no formato anterior.', error.message);
+      const legado = await supabase.from('concremrh_usuarios').select(COLUNAS_BASE).order('nome');
+      setUsuarios((legado.data ?? []) as unknown as Usuario[]);
+      setLoading(false);
+      return;
+    }
+
     setUsuarios((data ?? []) as unknown as Usuario[]);
     setLoading(false);
   }
@@ -63,6 +88,9 @@ export function useUsuarios() {
     perfil: UserPerfil;
     secoes: SectionKey[];
     ativo: boolean;
+    /** null volta o usuário ao modelo de seções (junto com permissoes: null). */
+    perfil_acesso_id: string | null;
+    permissoes: UserExcecoes | null;
   }>) {
     const { error } = await supabase
       .from('concremrh_usuarios')

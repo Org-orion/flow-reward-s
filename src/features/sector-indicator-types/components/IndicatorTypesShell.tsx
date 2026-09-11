@@ -16,6 +16,7 @@ import { IndicatorTypeDeleteDialog } from './IndicatorTypeDeleteDialog';
 import { IndicatorTypesSkeleton } from './IndicatorTypesSkeleton';
 import { IndicatorTypesEmptyState } from './IndicatorTypesEmptyState';
 import type { IndicatorTypeRow } from '../types/indicator-type.types';
+import { useResourceAccess } from '@/hooks/useResourceAccess';
 
 /**
  * Gestão de Indicadores Setoriais — página única. Shell orquestrador: carrega dados
@@ -24,6 +25,7 @@ import type { IndicatorTypeRow } from '../types/indicator-type.types';
  * dos indicadores GERAIS.
  */
 export function IndicatorTypesShell() {
+  const acesso = useResourceAccess('cad_tipos_indicadores');
   const data = useIndicatorTypes();
   const navigate = useNavigate();
   const state = useIndicatorTypeFilters(data.rows);
@@ -58,7 +60,7 @@ export function IndicatorTypesShell() {
           icon={Gauge}
           title="Nenhum tipo de indicador cadastrado"
           description="Cadastre os indicadores usados na medição de desempenho dos setores."
-          action={<Button size="sm" className="gap-1.5" onClick={openNovo}><Plus className="h-4 w-4" /> Novo tipo de indicador</Button>}
+          action={acesso.podeCriar ? <Button size="sm" className="gap-1.5" onClick={openNovo}><Plus className="h-4 w-4" /> Novo tipo de indicador</Button> : undefined}
         />
       ) : (
         <>

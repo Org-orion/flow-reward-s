@@ -16,6 +16,7 @@ import { AdjustmentImpactPanel } from '../components/adjustment/AdjustmentImpact
 import { AdjustmentWarnings } from '../components/adjustment/AdjustmentWarnings';
 import { OtherUnitsBalance, RecentItemMovements } from '../components/adjustment/AdjustmentSideInfo';
 import { AdjustmentReviewDialog, AdjustmentSuccessDialog, type RevisaoDados } from '../components/adjustment/AdjustmentDialogs';
+import { useResourceAccess } from '@/hooks/useResourceAccess';
 
 const chip = 'inline-flex items-center gap-1 rounded-full bg-muted/60 px-2 py-0.5 text-[11px] text-muted-foreground';
 
@@ -23,6 +24,10 @@ export function AjusteView() {
   const navigate = useNavigate();
   const a = useStockAdjustment();
   const [revisar, setRevisar] = useState(false);
+
+  // Permissões desta tela (ver src/config/permissions.ts).
+  const acesso = useResourceAccess('est_ajuste');
+  const podeRegistrar = acesso.podeEditar;
 
   const unidadeNome = a.saldoUnidade?.unidadeNome ?? a.unidades.find((u) => u.id === a.unidadeId)?.nome ?? null;
 
@@ -36,7 +41,8 @@ export function AjusteView() {
     };
   }, [a.fardamento, a.previa.result, unidadeNome, a.saldoAtual, a.motivoFinal, a.impactoFinanceiro, a.usuario]);
 
-  const confirmar = async () => { const ok = await a.confirmar(); if (ok) setRevisar(false); };
+  const confirmar = async () => {
+    if (!podeRegistrar) return; const ok = await a.confirmar(); if (ok) setRevisar(false); };
 
   const acoes = (
     <div className="flex items-center gap-2">
@@ -94,8 +100,8 @@ export function AjusteView() {
 
             <SectionCard title="3. Revisão e confirmação" description="Revise antes de aplicar o ajuste.">
               <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between">
-                <p className="text-sm text-muted-foreground">{a.podeRevisar ? 'Tudo pronto — revise os dados antes de confirmar.' : 'Selecione item, unidade, informe a contagem (diferente do saldo) e o motivo.'}</p>
-                <Button size="lg" className="gap-2" disabled={!a.podeRevisar || a.saving} onClick={() => setRevisar(true)}>
+                <p className="text-sm text-muted-foreground">{!podeRegistrar ? 'Você tem acesso de consulta a esta tela, mas não tem permissão para registrar a operação.' : a.podeRevisar ? 'Tudo pronto — revise os dados antes de confirmar.' : 'Selecione item, unidade, informe a contagem (diferente do saldo) e o motivo.'}</p>
+                <Button size="lg" className="gap-2" disabled={!podeRegistrar || !a.podeRevisar || a.saving} onClick={() => setRevisar(true)}>
                   {a.saving && <Loader2 className="h-4 w-4 animate-spin" />} Revisar ajuste
                 </Button>
               </div>
@@ -113,7 +119,7 @@ export function AjusteView() {
         </div>
       )}
 
-      <AdjustmentReviewDialog open={revisar} onOpenChange={setRevisar} dados={revisao} saving={a.saving} onConfirm={confirmar} />
+      <AdjustmentReviewDialog open={revisar && podeRegistrar} onOpenChange={setRevisar} dados={revisao} saving={a.saving} onConfirm={confirmar} />
       <AdjustmentSuccessDialog sucesso={a.sucesso} onOpenChange={(o) => { if (!o) a.reset(); }}
         onNovo={a.reset} onVerMovimentacoes={() => navigate('/controle-estoque/movimentacoes')} onVoltar={() => navigate('/controle-estoque/fardamentos')} />
     </div>

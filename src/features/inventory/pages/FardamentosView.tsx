@@ -22,8 +22,10 @@ import { InventorySidePanel } from '../components/fardamentos/InventorySidePanel
 import { FILTROS_VAZIO, aplicarFiltros, type Filtros } from '../components/fardamentos/filtros';
 import { situacaoDaLinha, SITUACAO_LABEL } from '../components/fardamentos/situacao';
 import type { FardamentoRow } from '../types/db.types';
+import { useResourceAccess } from '@/hooks/useResourceAccess';
 
 export function FardamentosView() {
+  const acesso = useResourceAccess('est_fardamentos');
   const navigate = useNavigate();
   const { toast } = useToast();
   const screen = useInventoryScreen();
@@ -49,10 +51,12 @@ export function FardamentosView() {
   const verUnidades = () => painelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
   const toggleAtivo = (f: FardamentoRow) => {
+    if (!acesso.podeEditar) return;
     if (f.variante.ativo !== false) { setConfirmInativar(f); return; }
     aplicarAtivo(f, true);
   };
   const aplicarAtivo = async (f: FardamentoRow, ativo: boolean) => {
+    if (!acesso.podeEditar) return;
     setSalvando(true);
     try {
       await definirAtivoCadastro('variantes', f.variante.id, ativo);
@@ -91,7 +95,7 @@ export function FardamentosView() {
           <Button variant="ghost" size="icon" className="h-9 w-9" aria-label="Mais ações"><MoreVertical className="h-4 w-4" /></Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-48">
-          <DropdownMenuItem onClick={exportarCsv} disabled={rows.length === 0}><Download className="mr-2 h-4 w-4" /> Exportar CSV</DropdownMenuItem>
+          {acesso.podeExportar && <DropdownMenuItem onClick={exportarCsv} disabled={rows.length === 0}><Download className="mr-2 h-4 w-4" /> Exportar CSV</DropdownMenuItem>}
           <DropdownMenuItem onClick={screen.refetch}><RefreshCw className="mr-2 h-4 w-4" /> Atualizar</DropdownMenuItem>
           <DropdownMenuItem onClick={() => navigate('/controle-estoque/cadastros')}><Settings className="mr-2 h-4 w-4" /> Cadastros de estoque</DropdownMenuItem>
         </DropdownMenuContent>

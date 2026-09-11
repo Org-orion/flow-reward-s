@@ -7,6 +7,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { cn } from '@/lib/utils';
 import { formatNumberBR } from '@/lib/formatters';
 import { ativoDe, type Row, type TabConfig } from './masterShared';
+import { useResourceAccess } from '@/hooks/useResourceAccess';
 
 interface Handlers {
   onView: (r: Row) => void;
@@ -29,6 +30,7 @@ interface Props extends Handlers {
 const PAGE_SIZES = [25, 50, 100];
 
 export function MasterDataTable({ cfg, pagina, total, page, setPage, pageSize, setPageSize, totalPaginas, isAdmin, onView, onEdit, onInativar, onReativar, onExcluir }: Props) {
+  const acesso = useResourceAccess('est_cadastros');
   const de = total === 0 ? 0 : (page - 1) * pageSize + 1;
   const ate = Math.min(page * pageSize, total);
 
@@ -39,11 +41,11 @@ export function MasterDataTable({ cfg, pagina, total, page, setPage, pageSize, s
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-48" onClick={(e) => e.stopPropagation()}>
         <DropdownMenuItem onClick={() => onView(r)}><Eye className="mr-2 h-4 w-4" /> Visualizar</DropdownMenuItem>
-        <DropdownMenuItem onClick={() => onEdit(r)}><Pencil className="mr-2 h-4 w-4" /> Editar</DropdownMenuItem>
-        {ativo
+        {acesso.podeEditar && <DropdownMenuItem onClick={() => onEdit(r)}><Pencil className="mr-2 h-4 w-4" /> Editar</DropdownMenuItem>}
+        {acesso.podeEditar && (ativo
           ? <DropdownMenuItem onClick={() => onInativar(r)}><PowerOff className="mr-2 h-4 w-4" /> Inativar</DropdownMenuItem>
-          : <DropdownMenuItem onClick={() => onReativar(r)}><Power className="mr-2 h-4 w-4" /> Reativar</DropdownMenuItem>}
-        {isAdmin && (
+          : <DropdownMenuItem onClick={() => onReativar(r)}><Power className="mr-2 h-4 w-4" /> Reativar</DropdownMenuItem>)}
+        {isAdmin && acesso.podeExcluir && (
           <>
             <DropdownMenuSeparator />
             <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => onExcluir(r)}><Trash2 className="mr-2 h-4 w-4" /> Excluir</DropdownMenuItem>

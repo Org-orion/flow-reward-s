@@ -58,7 +58,7 @@ export function UsersTable({ rows, secInputs, currentUserId, handlers }: { rows:
               <TableRow key={r.id} className="cursor-pointer hover:bg-muted/40" onClick={() => handlers.onOpen(r)}>
                 <TableCell><UserCell row={r} /></TableCell>
                 <TableCell><UserProfileBadge perfil={r.perfil} /></TableCell>
-                <TableCell><UserAccessSummary access={r.access} /></TableCell>
+                <TableCell><UserAccessSummary access={r.access} granular={r.granular} /></TableCell>
                 <TableCell><UserAuthStatus state={r.authState} /></TableCell>
                 <TableCell><UserStatus ativo={r.ativo} /></TableCell>
                 <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>{menu(r)}</TableCell>
@@ -83,7 +83,7 @@ export function UsersTable({ rows, secInputs, currentUserId, handlers }: { rows:
               <UserStatus ativo={r.ativo} />
               <UserAuthStatus state={r.authState} />
             </div>
-            <div className="mt-1.5"><UserAccessSummary access={r.access} /></div>
+            <div className="mt-1.5"><UserAccessSummary access={r.access} granular={r.granular} /></div>
           </div>
         ))}
       </div>

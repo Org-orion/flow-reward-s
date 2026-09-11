@@ -8,6 +8,7 @@ import { IndicatorTypeCode } from './IndicatorTypeCode';
 import { IndicatorTypeStatus } from './IndicatorTypeStatus';
 import { IndicatorTypeUsage } from './IndicatorTypeUsage';
 import type { IndicatorTypeRow } from '../types/indicator-type.types';
+import { useResourceAccess } from '@/hooks/useResourceAccess';
 
 interface Props {
   row: IndicatorTypeRow | null;
@@ -17,6 +18,7 @@ interface Props {
 }
 
 export function IndicatorTypeDrawer({ row, onClose, onEdit, onVerMedicoes }: Props) {
+  const acesso = useResourceAccess('cad_tipos_indicadores');
   if (!row) return <Sheet open={false} onOpenChange={() => {}}><SheetContent /></Sheet>;
   const r = row;
   const u = r.usage;
@@ -77,7 +79,9 @@ export function IndicatorTypeDrawer({ row, onClose, onEdit, onVerMedicoes }: Pro
         </div>
 
         <div className="border-t border-border/60 px-5 py-3">
-          <Button className="w-full gap-1.5" onClick={() => onEdit(r)}><Pencil className="h-4 w-4" /> Editar indicador</Button>
+          {acesso.podeEditar && (
+            <Button className="w-full gap-1.5" onClick={() => onEdit(r)}><Pencil className="h-4 w-4" /> Editar indicador</Button>
+          )}
         </div>
       </SheetContent>
     </Sheet>

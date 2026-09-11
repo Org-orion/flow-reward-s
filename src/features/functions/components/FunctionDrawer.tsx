@@ -5,6 +5,7 @@ import { pluralizeBR, formatNumberBR } from '@/lib/formatters';
 import { FunctionRegistrationStatus } from './FunctionRegistrationStatus';
 import { FunctionUsage } from './FunctionUsage';
 import type { FunctionRow } from '../types/function.types';
+import { useResourceAccess } from '@/hooks/useResourceAccess';
 
 interface Props {
   row: FunctionRow | null;
@@ -15,6 +16,7 @@ interface Props {
 }
 
 export function FunctionDrawer({ row, onClose, onEdit, onVerFuncionarios, onCompare }: Props) {
+  const acesso = useResourceAccess('cad_funcoes');
   if (!row) return <Sheet open={false} onOpenChange={() => {}}><SheetContent /></Sheet>;
   const r = row;
   const temCorrespondencia = r.status.status === 'possivel_correspondencia';
@@ -82,7 +84,9 @@ export function FunctionDrawer({ row, onClose, onEdit, onVerFuncionarios, onComp
         </div>
 
         <div className="border-t border-border/60 px-5 py-3">
-          <Button className="w-full gap-1.5" onClick={() => onEdit(r)}><Pencil className="h-4 w-4" /> Editar função</Button>
+          {acesso.podeEditar && (
+            <Button className="w-full gap-1.5" onClick={() => onEdit(r)}><Pencil className="h-4 w-4" /> Editar função</Button>
+          )}
         </div>
       </SheetContent>
     </Sheet>

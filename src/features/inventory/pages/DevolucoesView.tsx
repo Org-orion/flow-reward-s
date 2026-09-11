@@ -15,6 +15,7 @@ import { ReciboEntregaDialog } from '../components/ReciboEntregaDialog';
 import { getEntregaRecibo, type ReciboEntrega } from '../services/inventoryApi';
 import { RETURN_CONDITION_LABEL, RETURN_DESTINATION_LABEL } from '../domain/domainConstants';
 import type { AjusteAviso } from '../hooks/useStockAdjustment';
+import { useResourceAccess } from '@/hooks/useResourceAccess';
 
 const chip = 'inline-flex items-center gap-1 rounded-full bg-muted/60 px-2 py-0.5 text-[11px] text-muted-foreground';
 
@@ -22,6 +23,10 @@ export function DevolucoesView() {
   const navigate = useNavigate();
   const r = useStockReturns();
   const [revisar, setRevisar] = useState(false);
+
+  // Permissões desta tela (ver src/config/permissions.ts).
+  const acesso = useResourceAccess('est_devolucoes');
+  const podeRegistrar = acesso.podeCriar;
   const [recibo, setRecibo] = useState<ReciboEntrega | null>(null);
 
   const unidadeNomeMap = useMemo(() => new Map(r.unidades.map((u) => [u.id, u.nome])), [r.unidades]);
@@ -43,7 +48,8 @@ export function DevolucoesView() {
     };
   }, [r.entrega, r.varianteId, r.qtdValida, r.funcionario, r.dispSel, r.qtd, r.condicao, r.destino, r.reestoca, r.saldoAtual, r.saldoFinal, r.impacto, r.motivo, r.usuario]);
 
-  const confirmar = async () => { const ok = await r.confirmar(); if (ok) setRevisar(false); };
+  const confirmar = async () => {
+    if (!podeRegistrar) return; const ok = await r.confirmar(); if (ok) setRevisar(false); };
   const verRecibo = async (id: string) => { try { setRecibo(await getEntregaRecibo(id)); } catch { /* toast global */ } };
 
   const acoes = (
@@ -95,15 +101,15 @@ export function DevolucoesView() {
 
           <SectionCard title="Revisão e confirmação" description="Revise antes de registrar a devolução.">
             <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between">
-              <p className="text-sm text-muted-foreground">{r.podeRevisar ? 'Tudo pronto — revise antes de confirmar.' : 'Selecione a entrega, o item, a quantidade e a condição/destino.'}</p>
-              <Button size="lg" className="gap-2" disabled={!r.podeRevisar || r.saving} onClick={() => setRevisar(true)}>{r.saving && <Loader2 className="h-4 w-4 animate-spin" />} Revisar devolução</Button>
+              <p className="text-sm text-muted-foreground">{!podeRegistrar ? 'Você tem acesso de consulta a esta tela, mas não tem permissão para registrar a operação.' : r.podeRevisar ? 'Tudo pronto — revise antes de confirmar.' : 'Selecione a entrega, o item, a quantidade e a condição/destino.'}</p>
+              <Button size="lg" className="gap-2" disabled={!podeRegistrar || !r.podeRevisar || r.saving} onClick={() => setRevisar(true)}>{r.saving && <Loader2 className="h-4 w-4 animate-spin" />} Revisar devolução</Button>
             </div>
             {r.erro && <p className="mt-2 text-sm text-destructive">{r.erro}</p>}
           </SectionCard>
         </div>
       </div>
 
-      <StockReturnReviewDialog open={revisar} onOpenChange={setRevisar} saving={r.saving} onConfirm={confirmar} dados={revisao} />
+      <StockReturnReviewDialog open={revisar && podeRegistrar} onOpenChange={setRevisar} saving={r.saving} onConfirm={confirmar} dados={revisao} />
       <StockReturnSuccessDialog sucesso={r.sucesso} onOpenChange={(o) => { if (!o) r.reset(); }}
         onNova={r.reset} onVerMovimentacoes={() => navigate('/controle-estoque/movimentacoes')} onVoltar={() => navigate('/controle-estoque/fardamentos')} />
       <ReciboEntregaDialog recibo={recibo} onOpenChange={(o) => { if (!o) setRecibo(null); }} />

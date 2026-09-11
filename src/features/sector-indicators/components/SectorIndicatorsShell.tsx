@@ -14,6 +14,8 @@ import { useSectorIndicatorsDraft } from '../hooks/useSectorIndicatorsDraft';
 import { useSectorIndicatorsSelection } from '../hooks/useSectorIndicatorsSelection';
 import { buildBaselineFromRegistros } from '../domain/indicatorCalculations';
 import { normalizeSectorIndicatorView, type SectorIndicatorView } from '../views';
+import { useResourceAccess } from '@/hooks/useResourceAccess';
+import { AccessDenied } from '@/components/AccessDenied';
 import { SectorIndicatorsHeader } from './SectorIndicatorsHeader';
 import { SectorIndicatorsNavigation } from './SectorIndicatorsNavigation';
 import { SectorIndicatorsSkeleton } from './SectorIndicatorsSkeleton';
@@ -29,6 +31,8 @@ import type { SectorIndicatorsPageProps } from '../pages/_shared';
  */
 export function SectorIndicatorsShell() {
   const data = useSectorIndicators();
+  const acesso = useResourceAccess('indicadores_setor');
+  const podeSalvar = acesso.podeEditarCampo('meta') || acesso.podeEditarCampo('realizado');
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const view = normalizeSectorIndicatorView(searchParams.get('view'));
@@ -96,6 +100,7 @@ export function SectorIndicatorsShell() {
     navigate(`/premiacoes/indicadores-gerais${qs ? `?${qs}` : ''}`);
   };
 
+  if (!acesso.podeVer) return <AccessDenied area="Indicadores por Setor" />;
   if (data.loading && data.setoresPrevistos.length === 0) return <SectorIndicatorsSkeleton />;
 
   const pageProps: SectorIndicatorsPageProps = {
@@ -116,6 +121,7 @@ export function SectorIndicatorsShell() {
         saving={draft.saving}
         onSave={() => { setView('apuracao'); setReviewOpen(true); }}
         onVerIndicadoresGerais={() => goToIndicadoresGerais({ competencia })}
+        podeSalvar={podeSalvar}
       >
         <div className="flex flex-wrap items-center justify-between gap-3">
           <SectorIndicatorsNavigation active={view} onChange={setView} />

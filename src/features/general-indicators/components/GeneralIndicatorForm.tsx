@@ -38,10 +38,15 @@ interface Props {
   onCreate: (data: { tipo_indicador_id: string; competencia: string; meta: number; realizado: number }) => Promise<void>;
   onUpdate: (id: string, data: { meta: number; realizado: number }) => Promise<void>;
   onEditExisting: (registro: IndicadorGeral) => void;
+  /** Permissões de campo (ver src/config/permissions.ts). */
+  campos?: { editarMeta: boolean; editarRealizado: boolean };
 }
 
 /** Modal de registro/edição — adapta labels e formatação ao indicador selecionado. */
-export function GeneralIndicatorForm({ open, onOpenChange, tipos, editing, defaultCompetencia, findRegistro, onCreate, onUpdate, onEditExisting }: Props) {
+export function GeneralIndicatorForm({
+  open, onOpenChange, tipos, editing, defaultCompetencia, findRegistro, onCreate, onUpdate, onEditExisting,
+  campos = { editarMeta: true, editarRealizado: true },
+}: Props) {
   const isEdit = !!editing;
   const [tipoId, setTipoId] = useState('');
   const [competencia, setCompetencia] = useState(defaultCompetencia);
@@ -82,7 +87,9 @@ export function GeneralIndicatorForm({ open, onOpenChange, tipos, editing, defau
   const metaLabel = isCurrency ? 'Meta de faturamento' : def.code === 'KITS' ? 'Meta de kits' : `Meta (${def.unit || def.label})`;
   const realizadoLabel = isCurrency ? 'Faturamento realizado' : def.code === 'KITS' ? 'Kits realizados' : `Realizado (${def.unit || def.label})`;
 
-  const canSave = tipoId && competencia && meta != null && realizado != null && !duplicado && !saving;
+  // Sem nenhum campo editável não há o que salvar.
+  const canSave = (campos.editarMeta || campos.editarRealizado)
+    && tipoId && competencia && meta != null && realizado != null && !duplicado && !saving;
 
   const handleSave = async () => {
     if (!canSave || meta == null || realizado == null) return;
@@ -123,17 +130,17 @@ export function GeneralIndicatorForm({ open, onOpenChange, tipos, editing, defau
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
-              <label className="text-xs font-medium text-muted-foreground">{metaLabel}</label>
+              <label className="text-xs font-medium text-muted-foreground">{metaLabel}{!campos.editarMeta && ' (somente leitura)'}</label>
               <div className="relative">
                 {isCurrency && <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">R$</span>}
-                <Input inputMode="decimal" value={metaText} onChange={(e) => setMetaText(mask(e.target.value))} className={cn('text-right tabular-nums', isCurrency && 'pl-9')} placeholder={isCurrency ? '0,00' : '0'} aria-label={metaLabel} />
+                <Input inputMode="decimal" value={metaText} onChange={(e) => setMetaText(mask(e.target.value))} readOnly={!campos.editarMeta} disabled={!campos.editarMeta} className={cn('text-right tabular-nums', isCurrency && 'pl-9')} placeholder={isCurrency ? '0,00' : '0'} aria-label={campos.editarMeta ? metaLabel : `${metaLabel} (somente leitura)`} />
               </div>
             </div>
             <div className="space-y-1">
-              <label className="text-xs font-medium text-muted-foreground">{realizadoLabel}</label>
+              <label className="text-xs font-medium text-muted-foreground">{realizadoLabel}{!campos.editarRealizado && ' (somente leitura)'}</label>
               <div className="relative">
                 {isCurrency && <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">R$</span>}
-                <Input inputMode="decimal" value={realizadoText} onChange={(e) => setRealizadoText(mask(e.target.value))} className={cn('text-right tabular-nums', isCurrency && 'pl-9')} placeholder={isCurrency ? '0,00' : '0'} aria-label={realizadoLabel} />
+                <Input inputMode="decimal" value={realizadoText} onChange={(e) => setRealizadoText(mask(e.target.value))} readOnly={!campos.editarRealizado} disabled={!campos.editarRealizado} className={cn('text-right tabular-nums', isCurrency && 'pl-9')} placeholder={isCurrency ? '0,00' : '0'} aria-label={campos.editarRealizado ? realizadoLabel : `${realizadoLabel} (somente leitura)`} />
                 {!isCurrency && def.unit && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">{def.unit}</span>}
               </div>
             </div>

@@ -1,6 +1,10 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useMemo, useState, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { saveCustomSession, loadCustomSession, clearCustomSession, purgeLegacyAuthStorage } from './authStorage';
+import type { FieldAction, PermissionAction } from '@/config/permissions';
+import {
+  buildAccessState, accessCanSection, accessCan, accessCanField, accessCanEditAnyField,
+} from '@/domain/permissions/effectiveAccess';
 
 export type UserPerfil = 'admin' | 'rh' | 'sesmt' | 'producao' | 'custom';
 
@@ -24,6 +28,15 @@ export interface UserProfile {
   nome: string | null;
   perfil: UserPerfil;
   secoes: SectionKey[];
+  /**
+   * Permissões granulares EFETIVAS (perfil de acesso ∪ exceções \ negadas),
+   * já resolvidas no servidor. `null`/ausente = usuário LEGADO, governado só
+   * por `secoes` (comportamento anterior, sem regressão).
+   * Ver src/config/permissions.ts e src/domain/permissions/effectiveAccess.ts.
+   */
+  permissoes?: string[] | null;
+  /** Nome do perfil de acesso aplicado — informativo (exibição/auditoria). */
+  perfilAcesso?: string | null;
 }
 
 export const DEFAULT_ROUTE: Record<UserPerfil, string> = {
@@ -53,6 +66,8 @@ interface GetMyProfileResponse {
   nome?: string | null;
   perfil?: string;
   secoes?: string[];
+  permissoes?: string[] | null;
+  perfil_acesso?: string | null;
 }
 
 // Formato de resposta da Edge Function auth-bridge (proposta na Fase 2).
@@ -78,6 +93,8 @@ async function fetchSupabaseProfile(): Promise<UserProfile | null> {
     nome:   r.nome ?? null,
     perfil: (r.perfil ?? 'custom') as UserPerfil,
     secoes: (r.secoes ?? []) as SectionKey[],
+    permissoes: r.permissoes ?? null,
+    perfilAcesso: r.perfil_acesso ?? null,
   };
 }
 
@@ -88,6 +105,14 @@ interface AuthContextType {
   signOut: () => void;
   canAccess: (section: SectionKey) => boolean;
   canAccessHub: (appCode: string) => boolean;
+  /** Ação em um recurso (tela) — ex.: can('producao_setor', 'editar'). */
+  can: (resource: string, action: PermissionAction) => boolean;
+  /** Ação em um CAMPO controlado — ex.: canField('producao_setor', 'meta', 'editar'). */
+  canField: (resource: string, field: string, action: FieldAction) => boolean;
+  /** Há pelo menos um campo editável no recurso? (habilita salvar/rascunho.) */
+  canEditAnyField: (resource: string) => boolean;
+  /** O usuário está sob o modelo granular (tem perfil de acesso/exceções)? */
+  isGranular: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -192,7 +217,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { error: 'Não foi possível validar o acesso. Tente novamente.' };
     }
 
-    const result = data as { ok: boolean; error?: string; profile?: { id: string; email: string; nome?: string | null; perfil?: string; secoes?: string[] } };
+    const result = data as {
+      ok: boolean; error?: string;
+      profile?: {
+        id: string; email: string; nome?: string | null; perfil?: string; secoes?: string[];
+        permissoes?: string[] | null; perfil_acesso?: string | null;
+      };
+    };
     if (!result?.ok || !result.profile) return { error: result?.error ?? 'Email ou senha inválidos.' };
 
     const prof: UserProfile = {
@@ -201,6 +232,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       nome:   result.profile.nome ?? null,
       perfil: result.profile.perfil as UserPerfil,
       secoes: (result.profile.secoes ?? []) as SectionKey[],
+      permissoes: result.profile.permissoes ?? null,
+      perfilAcesso: result.profile.perfil_acesso ?? null,
     };
 
     setProfile(prof);
@@ -259,22 +292,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setLoading(false);
   };
 
-  const canAccess = (section: SectionKey): boolean => {
-    if (!profile) return false;
-    if (profile.perfil === 'admin') return true;
-    return profile.secoes.includes(section);
-  };
+  // Estado de acesso resolvido UMA vez por perfil (evita reconstruir o Set em
+  // cada chamada de canAccess/can dentro de listas e tabelas grandes).
+  const access = useMemo(
+    () => (profile
+      ? buildAccessState(profile.perfil, profile.secoes, profile.permissoes != null ? { mais: profile.permissoes } : null)
+      : null),
+    [profile],
+  );
+
+  const canAccess = (section: SectionKey): boolean =>
+    !!access && accessCanSection(access, section);
 
   const canAccessHub = (appCode: string): boolean => {
-    if (!profile) return false;
-    if (profile.perfil === 'admin') return true;
+    if (!access) return false;
+    if (access.perfil === 'admin') return true;
     const required = HUB_MODULE_SECTIONS[appCode];
     if (!required) return false;
-    return required.some(s => profile.secoes.includes(s));
+    return required.some(s => accessCanSection(access, s));
   };
 
+  const can = (resource: string, action: PermissionAction): boolean =>
+    !!access && accessCan(access, resource, action);
+
+  const canField = (resource: string, field: string, action: FieldAction): boolean =>
+    !!access && accessCanField(access, resource, field, action);
+
+  const canEditAnyField = (resource: string): boolean =>
+    !!access && accessCanEditAnyField(access, resource);
+
   return (
-    <AuthContext.Provider value={{ profile, loading, signIn, signOut, canAccess, canAccessHub }}>
+    <AuthContext.Provider value={{
+      profile, loading, signIn, signOut,
+      canAccess, canAccessHub, can, canField, canEditAnyField,
+      isGranular: !!access?.grants,
+    }}>
       {children}
     </AuthContext.Provider>
   );

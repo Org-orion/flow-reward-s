@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
@@ -24,6 +24,7 @@ import { PeriodAnalysisView } from "@/components/occurrences/pages/PeriodAnalysi
 import { OccurrencesHistoryView } from "@/components/occurrences/pages/OccurrencesHistoryView";
 import { OccurrencesImportView } from "@/components/occurrences/pages/OccurrencesImportView";
 import type { OccurrencePageProps } from "@/components/occurrences/pages/_shared";
+import { useResourceAccess } from "@/hooks/useResourceAccess";
 
 /**
  * Central de Apuração de Ocorrências — experiência paginada (4 visões).
@@ -33,7 +34,18 @@ import type { OccurrencePageProps } from "@/components/occurrences/pages/_shared
 export const FaltasAdvertencias = () => {
   const data = useOccurrences();
   const [searchParams, setSearchParams] = useSearchParams();
-  const view = normalizeOccurrenceView(searchParams.get("view"));
+
+  // Permissões desta tela (ver src/config/permissions.ts).
+  const acesso = useResourceAccess("faltas_advertencias");
+  const viewsPermitidas = useMemo<OccurrenceView[]>(() => {
+    const vs: OccurrenceView[] = ["lancamento", "analise", "historico"];
+    if (acesso.podeImportar) vs.push("importacoes");
+    return vs;
+  }, [acesso.podeImportar]);
+
+  // Visão pedida na URL que o usuário não pode abrir cai no lançamento.
+  const viewSolicitada = normalizeOccurrenceView(searchParams.get("view"));
+  const view = viewsPermitidas.includes(viewSolicitada) ? viewSolicitada : "lancamento";
 
   const [competencia, setCompetenciaState] = useState(currentCompetencia());
   const draft = useOccurrenceDraft({
@@ -57,6 +69,7 @@ export const FaltasAdvertencias = () => {
   }, [draft.isDirty]);
 
   const setView = (v: OccurrenceView) => {
+    if (!viewsPermitidas.includes(v)) return;
     if (draft.isDirty) { setPendingAction({ kind: "view", value: v }); return; }
     const sp = new URLSearchParams(searchParams);
     sp.set("view", v);
@@ -107,7 +120,7 @@ export const FaltasAdvertencias = () => {
         onSave={draft.save}
       >
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <OccurrencesNavigation active={view} onChange={setView} />
+          <OccurrencesNavigation active={view} onChange={setView} disponiveis={viewsPermitidas} />
           <CompetenciaPicker value={competencia} onChange={setCompetencia} />
         </div>
       </OccurrencesHeader>

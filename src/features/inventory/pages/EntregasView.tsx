@@ -23,6 +23,7 @@ import { StockDeliveryReviewDialog, StockDeliverySuccessDialog } from '../compon
 import { AdjustmentWarnings } from '../components/adjustment/AdjustmentWarnings';
 import { DELIVERY_TYPES, DELIVERY_TYPE_LABEL } from '../domain/domainConstants';
 import type { DeliveryType } from '../types/inventory.types';
+import { useResourceAccess } from '@/hooks/useResourceAccess';
 
 const chip = 'inline-flex items-center gap-1 rounded-full bg-muted/60 px-2 py-0.5 text-[11px] text-muted-foreground';
 
@@ -30,11 +31,16 @@ export function EntregasView() {
   const navigate = useNavigate();
   const d = useStockDelivery();
   const [revisar, setRevisar] = useState(false);
+
+  // Permissões desta tela (ver src/config/permissions.ts).
+  const acesso = useResourceAccess('est_entregas');
+  const podeRegistrar = acesso.podeCriar;
   const [termo, setTermo] = useState(false);
 
   const unidadeNomeMap = useMemo(() => new Map(d.unidades.map((u) => [u.id, u.nome])), [d.unidades]);
   const tipoLabel = DELIVERY_TYPE_LABEL[d.tipo as DeliveryType] ?? d.tipo;
-  const confirmar = async () => { const ok = await d.confirmar(); if (ok) setRevisar(false); };
+  const confirmar = async () => {
+    if (!podeRegistrar) return; const ok = await d.confirmar(); if (ok) setRevisar(false); };
 
   const acoes = (
     <div className="flex items-center gap-2">
@@ -111,8 +117,8 @@ export function EntregasView() {
 
             <SectionCard title="4. Revisão e confirmação" description="Revise antes de registrar a entrega.">
               <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between">
-                <p className="text-sm text-muted-foreground">{d.podeRevisar ? 'Tudo pronto — revise antes de confirmar.' : 'Informe unidade, tipo, colaborador elegível e itens com saldo suficiente.'}</p>
-                <Button size="lg" className="gap-2" disabled={!d.podeRevisar || d.saving} onClick={() => setRevisar(true)}>{d.saving && <Loader2 className="h-4 w-4 animate-spin" />} Revisar entrega</Button>
+                <p className="text-sm text-muted-foreground">{!podeRegistrar ? 'Você tem acesso de consulta a esta tela, mas não tem permissão para registrar a operação.' : d.podeRevisar ? 'Tudo pronto — revise antes de confirmar.' : 'Informe unidade, tipo, colaborador elegível e itens com saldo suficiente.'}</p>
+                <Button size="lg" className="gap-2" disabled={!podeRegistrar || !d.podeRevisar || d.saving} onClick={() => setRevisar(true)}>{d.saving && <Loader2 className="h-4 w-4 animate-spin" />} Revisar entrega</Button>
               </div>
               {d.erro && <p className="mt-2 text-sm text-destructive">{d.erro}</p>}
             </SectionCard>
@@ -127,7 +133,7 @@ export function EntregasView() {
       )}
 
       <ResponsibilityTermPreview open={termo} onOpenChange={setTermo} funcionario={d.funcionario} unidadeNome={d.unidade?.nome ?? null} tipoLabel={tipoLabel} rows={d.rows} />
-      <StockDeliveryReviewDialog open={revisar} onOpenChange={setRevisar} saving={d.saving} onConfirm={confirmar}
+      <StockDeliveryReviewDialog open={revisar && podeRegistrar} onOpenChange={setRevisar} saving={d.saving} onConfirm={confirmar}
         funcionario={d.funcionario} unidadeNome={d.unidade?.nome ?? null} tipoLabel={tipoLabel} rows={d.rows} totais={d.totais} valorCompra={d.valorCompra} temCompra={d.tipo === 'COMPRA'} observacao={d.observacao} usuario={d.usuario} />
       <StockDeliverySuccessDialog recibo={d.sucesso} onOpenChange={(o) => { if (!o) d.reset(); }}
         onNova={d.reset} onVerMovimentacoes={() => navigate('/controle-estoque/movimentacoes')} onVoltar={() => navigate('/controle-estoque/fardamentos')} />

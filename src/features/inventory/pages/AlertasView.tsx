@@ -16,6 +16,7 @@ import { CriticalUnitsPanel, AffectedCategoriesPanel, RecommendationsPanel, Rela
 import { SEV_LABEL } from '../components/alerts/severity';
 import { formatDateTimeBR, formatDateBR } from '@/lib/dateTime';
 import type { FardamentoRow } from '../types/db.types';
+import { useResourceAccess } from '@/hooks/useResourceAccess';
 
 function baixarCsv(nome: string, cab: string[], linhas: string[][]) {
   const csv = [cab, ...linhas].map((l) => l.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(';')).join('\r\n');
@@ -26,6 +27,7 @@ function baixarCsv(nome: string, cab: string[], linhas: string[][]) {
 }
 
 export function AlertasView() {
+  const acesso = useResourceAccess('est_alertas');
   const navigate = useNavigate();
   const a = useInventoryAlerts();
   const [drawer, setDrawer] = useState<{ f: FardamentoRow; aba: string } | null>(null);
@@ -54,8 +56,8 @@ export function AlertasView() {
         <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-9 w-9" aria-label="Mais ações"><MoreVertical className="h-4 w-4" /></Button></DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-52">
           <DropdownMenuItem onClick={() => navigate('/controle-estoque/ajuste')}><SlidersHorizontal className="mr-2 h-4 w-4" /> Ajustar saldo</DropdownMenuItem>
-          <DropdownMenuItem onClick={exportarAlertas} disabled={a.filtradas.length === 0}><Download className="mr-2 h-4 w-4" /> Exportar alertas</DropdownMenuItem>
-          <DropdownMenuItem onClick={exportarReposicao} disabled={a.reposicao.length === 0}><Download className="mr-2 h-4 w-4" /> Exportar lista de reposição</DropdownMenuItem>
+          {acesso.podeExportar && <DropdownMenuItem onClick={exportarAlertas} disabled={a.filtradas.length === 0}><Download className="mr-2 h-4 w-4" /> Exportar alertas</DropdownMenuItem>}
+          {acesso.podeExportar && <DropdownMenuItem onClick={exportarReposicao} disabled={a.reposicao.length === 0}><Download className="mr-2 h-4 w-4" /> Exportar lista de reposição</DropdownMenuItem>}
           <DropdownMenuItem onClick={() => navigate('/controle-estoque/cadastros')}><Settings className="mr-2 h-4 w-4" /> Configurar mínimos</DropdownMenuItem>
           <DropdownMenuItem onClick={() => navigate('/controle-estoque/movimentacoes')}><ArrowLeftRight className="mr-2 h-4 w-4" /> Ver movimentações</DropdownMenuItem>
         </DropdownMenuContent>

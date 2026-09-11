@@ -29,7 +29,7 @@ export const AppSidebar = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { canAccess, signOut, profile } = useAuth();
+  const { canAccess, can, isGranular, signOut, profile } = useAuth();
 
   const [mobileOpen, setMobileOpen] = useState(false);
   const asideRef = useRef<HTMLElement | null>(null);
@@ -39,8 +39,8 @@ export const AppSidebar = () => {
   const isAdmin = profile?.perfil === 'admin';
 
   const nav = useMemo(
-    () => filterNavigation(navigationByModule[moduleId], { isAdmin, canAccess }),
-    [moduleId, isAdmin, canAccess],
+    () => filterNavigation(navigationByModule[moduleId], { isAdmin, canAccess, can, isGranular }),
+    [moduleId, isAdmin, canAccess, can, isGranular],
   );
 
   const [openGroups, setOpenGroups] = useState<Set<string>>(() => new Set(activeGroupIds(nav, location.pathname)));

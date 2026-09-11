@@ -14,10 +14,16 @@ interface Props {
   onEdit: () => void;
   onCompare: () => void;
   onDelete: () => Promise<void> | void;
+  /** Permissões (ver src/config/permissions.ts). */
+  podeEditar?: boolean;
+  podeExcluir?: boolean;
 }
 
 /** Menu de contexto do histórico. Excluir é separado, perigoso, com confirmação e bloqueio de duplo envio. */
-export function GeneralIndicatorsActionsMenu({ indicadorLabel, competenciaLabel, onView, onEdit, onCompare, onDelete }: Props) {
+export function GeneralIndicatorsActionsMenu({
+  indicadorLabel, competenciaLabel, onView, onEdit, onCompare, onDelete,
+  podeEditar = true, podeExcluir = true,
+}: Props) {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
@@ -42,12 +48,16 @@ export function GeneralIndicatorsActionsMenu({ indicadorLabel, competenciaLabel,
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-52">
           <DropdownMenuItem onClick={onView}><Eye className="mr-2 h-4 w-4" /> Ver detalhes</DropdownMenuItem>
-          <DropdownMenuItem onClick={onEdit}><Pencil className="mr-2 h-4 w-4" /> Editar</DropdownMenuItem>
+          {podeEditar && <DropdownMenuItem onClick={onEdit}><Pencil className="mr-2 h-4 w-4" /> Editar</DropdownMenuItem>}
           <DropdownMenuItem onClick={onCompare}><GitCompareArrows className="mr-2 h-4 w-4" /> Comparar</DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={() => setConfirmOpen(true)} className="text-destructive focus:text-destructive">
-            <Trash2 className="mr-2 h-4 w-4" /> Excluir
-          </DropdownMenuItem>
+          {podeExcluir && (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => setConfirmOpen(true)} className="text-destructive focus:text-destructive">
+                <Trash2 className="mr-2 h-4 w-4" /> Excluir
+              </DropdownMenuItem>
+            </>
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
 

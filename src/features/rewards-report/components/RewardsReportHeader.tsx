@@ -1,6 +1,7 @@
 import { FileText, Download, PlayCircle } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
+import { useResourceAccess } from '@/hooks/useResourceAccess';
 
 interface Props {
   onExport: () => void;
@@ -10,6 +11,7 @@ interface Props {
 
 /** Cabeçalho compacto do relatório. Exportação e "Ver processamento" à direita. */
 export function RewardsReportHeader({ onExport, onVerProcessamento, children }: Props) {
+  const acesso = useResourceAccess('relatorio_premiacoes');
   return (
     <div className="rounded-2xl border border-border/70 bg-card px-5 py-4 shadow-[var(--shadow-card)]">
       <div className="flex flex-col gap-3">
@@ -29,9 +31,11 @@ export function RewardsReportHeader({ onExport, onVerProcessamento, children }: 
                 <PlayCircle className="h-4 w-4" /> Ver processamento
               </Button>
             )}
-            <Button size="sm" className="h-8 gap-1.5" onClick={onExport}>
-              <Download className="h-4 w-4" /> Exportar relatório
-            </Button>
+            {acesso.podeExportar && (
+              <Button size="sm" className="h-8 gap-1.5" onClick={onExport}>
+                <Download className="h-4 w-4" /> Exportar relatório
+              </Button>
+            )}
           </div>
         </div>
         {children && <div className="border-t border-border/60 pt-3">{children}</div>}

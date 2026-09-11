@@ -7,6 +7,7 @@ import {
   AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import type { Funcionario } from '@/hooks/useFuncionarios';
+import { useResourceAccess } from '@/hooks/useResourceAccess';
 
 interface EmployeeActionsMenuProps {
   funcionario: Funcionario;
@@ -24,6 +25,7 @@ interface EmployeeActionsMenuProps {
  */
 export function EmployeeActionsMenu({ funcionario, onView, onEdit, onInactivate }: EmployeeActionsMenuProps) {
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const acesso = useResourceAccess('funcionarios');
 
   return (
     <>
@@ -35,8 +37,8 @@ export function EmployeeActionsMenu({ funcionario, onView, onEdit, onInactivate 
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-48">
           <DropdownMenuItem onClick={onView}><Eye className="mr-2 h-4 w-4" /> Ver perfil</DropdownMenuItem>
-          <DropdownMenuItem onClick={onEdit}><Pencil className="mr-2 h-4 w-4" /> Editar</DropdownMenuItem>
-          {funcionario.ativo && (
+          {acesso.podeEditar && <DropdownMenuItem onClick={onEdit}><Pencil className="mr-2 h-4 w-4" /> Editar</DropdownMenuItem>}
+          {funcionario.ativo && acesso.podeEditar && (
             <>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => setConfirmOpen(true)} className="text-destructive focus:text-destructive">

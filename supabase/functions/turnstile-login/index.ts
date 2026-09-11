@@ -96,6 +96,11 @@ Deno.serve(async (req: Request) => {
         nome: login.nome ?? null,
         perfil: login.perfil,
         secoes: login.secoes ?? [],
+        // Permissões granulares EFETIVAS já resolvidas pela RPC (perfil de acesso
+        // ∪ exceções \ negadas). `null` = usuário legado, governado só por `secoes`.
+        // Repassar `null` (não `[]`): array vazio significa "granular sem acesso".
+        permissoes: login.permissoes ?? null,
+        perfil_acesso: login.perfil_acesso ?? null,
       },
     });
   } catch (e) {

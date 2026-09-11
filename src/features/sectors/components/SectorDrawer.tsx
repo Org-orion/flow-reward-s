@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { pluralizeBR } from '@/lib/formatters';
 import { SectorRegistrationStatus } from './SectorRegistrationStatus';
 import type { SectorRow } from '../types/sector.types';
+import { useResourceAccess } from '@/hooks/useResourceAccess';
 
 interface Props {
   row: SectorRow | null;
@@ -15,6 +16,7 @@ interface Props {
 }
 
 export function SectorDrawer({ row, onClose, onEdit, onFuncionarios, onProducao, onIndicadores }: Props) {
+  const acesso = useResourceAccess('cad_setores');
   if (!row) return <Sheet open={false} onOpenChange={() => {}}><SheetContent /></Sheet>;
   const r = row;
   return (
@@ -57,7 +59,9 @@ export function SectorDrawer({ row, onClose, onEdit, onFuncionarios, onProducao,
         </div>
 
         <div className="border-t border-border/60 px-5 py-3">
-          <Button className="w-full gap-1.5" onClick={() => onEdit(r)}><Pencil className="h-4 w-4" /> Editar setor</Button>
+          {acesso.podeEditar && (
+            <Button className="w-full gap-1.5" onClick={() => onEdit(r)}><Pencil className="h-4 w-4" /> Editar setor</Button>
+          )}
         </div>
       </SheetContent>
     </Sheet>

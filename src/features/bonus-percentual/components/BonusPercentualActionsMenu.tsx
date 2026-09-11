@@ -2,6 +2,7 @@ import { MoreHorizontal, Eye, Calculator, Pencil, CalendarPlus, Trash2 } from 'l
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
+import { useResourceAccess } from '@/hooks/useResourceAccess';
 
 interface Props {
   canEdit: boolean;
@@ -15,6 +16,7 @@ interface Props {
 
 export function BonusPercentualActionsMenu({ canEdit, canDelete, onDetails, onSimular, onEdit, onNovaVigencia, onDelete }: Props) {
   const isAdmin = useIsAdmin();
+  const acesso = useResourceAccess('cad_bonus_percentual');
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -23,9 +25,9 @@ export function BonusPercentualActionsMenu({ canEdit, canDelete, onDetails, onSi
       <DropdownMenuContent align="end" className="w-56">
         <DropdownMenuItem onClick={onDetails}><Eye className="mr-2 h-4 w-4" /> Ver detalhes</DropdownMenuItem>
         <DropdownMenuItem onClick={onSimular}><Calculator className="mr-2 h-4 w-4" /> Simular</DropdownMenuItem>
-        <DropdownMenuItem onClick={onNovaVigencia}><CalendarPlus className="mr-2 h-4 w-4" /> Criar nova vigência</DropdownMenuItem>
-        {canEdit && <DropdownMenuItem onClick={onEdit}><Pencil className="mr-2 h-4 w-4" /> Editar</DropdownMenuItem>}
-        {canDelete && isAdmin && (
+        {acesso.podeCriar && <DropdownMenuItem onClick={onNovaVigencia}><CalendarPlus className="mr-2 h-4 w-4" /> Criar nova vigência</DropdownMenuItem>}
+        {canEdit && acesso.podeEditar && <DropdownMenuItem onClick={onEdit}><Pencil className="mr-2 h-4 w-4" /> Editar</DropdownMenuItem>}
+        {canDelete && isAdmin && acesso.podeExcluir && (
           <>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={onDelete} className="text-destructive focus:text-destructive"><Trash2 className="mr-2 h-4 w-4" /> Excluir</DropdownMenuItem>

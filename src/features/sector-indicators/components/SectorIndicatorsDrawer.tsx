@@ -24,17 +24,21 @@ interface Props {
   onSave: () => void;
   onSaveNext: () => void;
   onVerIndicadoresGerais: () => void;
+  /** Permissões de campo desta tela (ver src/config/permissions.ts). */
+  campos: { editarMeta: boolean; editarRealizado: boolean };
 }
 
 /** Drawer de apuração de um setor — os cinco indicadores + navegação e salvamento. */
 export function SectorIndicatorsDrawer({
   row, competencia, changedIndicators, saving, hasPrev, hasNext,
   onClose, onPrev, onNext, onCommit, onRestoreIndicator, onMarkSemMedicao, onSave, onSaveNext, onVerIndicadoresGerais,
+  campos,
 }: Props) {
   if (!row) return <Sheet open={false} onOpenChange={() => {}}><SheetContent /></Sheet>;
 
   const preenchidos = INDICATOR_IDS.filter((id) => row.cells[id].meta != null || row.cells[id].realizado != null).length;
   const pctPreenchido = (preenchidos / INDICATOR_IDS.length) * 100;
+  const podeEditar = campos.editarMeta || campos.editarRealizado;
 
   return (
     <Sheet open={!!row} onOpenChange={(o) => { if (!o) onClose(); }}>
@@ -69,33 +73,39 @@ export function SectorIndicatorsDrawer({
               def={def}
               cell={row.cells[def.id]}
               changed={changedIndicators.has(def.id)}
+              metaBloqueada={!campos.editarMeta}
+              realizadoBloqueado={!campos.editarRealizado}
               onCommit={(field, value) => onCommit(def.id, field, value)}
               onRestore={() => onRestoreIndicator(def.id)}
               onCtrlEnter={onSaveNext}
             />
           ))}
 
-          <button
-            type="button"
-            onClick={onMarkSemMedicao}
-            className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-border py-2 text-xs font-medium text-muted-foreground hover:bg-muted"
-          >
-            <MinusCircle className="h-3.5 w-3.5" /> Marcar setor como sem medição (todos 100%)
-          </button>
+          {campos.editarRealizado && (
+            <button
+              type="button"
+              onClick={onMarkSemMedicao}
+              className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-border py-2 text-xs font-medium text-muted-foreground hover:bg-muted"
+            >
+              <MinusCircle className="h-3.5 w-3.5" /> Marcar setor como sem medição (todos 100%)
+            </button>
+          )}
 
           <Button variant="ghost" className="w-full justify-center gap-1.5 text-sm text-muted-foreground" onClick={onVerIndicadoresGerais}>
             <BarChart3 className="h-4 w-4" /> Ver Indicadores Gerais
           </Button>
         </div>
 
-        <div className="flex items-center gap-2 border-t border-border/60 px-5 py-3">
-          <Button variant="outline" className="flex-1" onClick={onSave} disabled={saving}>
-            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Salvar
-          </Button>
-          <Button className="flex-1 gap-1.5" onClick={onSaveNext} disabled={saving || !hasNext}>
-            Salvar e próximo <ChevronRight className="h-4 w-4" />
-          </Button>
-        </div>
+        {podeEditar && (
+          <div className="flex items-center gap-2 border-t border-border/60 px-5 py-3">
+            <Button variant="outline" className="flex-1" onClick={onSave} disabled={saving}>
+              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Salvar
+            </Button>
+            <Button className="flex-1 gap-1.5" onClick={onSaveNext} disabled={saving || !hasNext}>
+              Salvar e próximo <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
       </SheetContent>
     </Sheet>
   );

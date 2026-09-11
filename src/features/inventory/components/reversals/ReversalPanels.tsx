@@ -15,8 +15,10 @@ import type { EntregaCancel, DevEstorno } from '../../hooks/useInventoryReversal
 const ELEG_CANCEL: Record<string, { label: string; variant: StatusVariant }> = { ELEGIVEL: { label: 'Elegível', variant: 'success' }, BLOQUEADA_DEVOLUCAO: { label: 'Bloqueada', variant: 'warning' } };
 const ELEG_EST: Record<string, { label: string; variant: StatusVariant }> = { ELEGIVEL: { label: 'Elegível', variant: 'success' }, JA_ESTORNADA: { label: 'Estornada', variant: 'neutral' }, BLOQUEADA_SALDO: { label: 'Bloqueada por saldo', variant: 'warning' } };
 
-export function DeliveryCancellationPanel({ itens, buscaRaw, setBusca, unidadeNome, loading, onRevisar }: {
+export function DeliveryCancellationPanel({ itens, buscaRaw, setBusca, unidadeNome, loading, onRevisar, podeEstornar = true }: {
   itens: EntregaCancel[]; buscaRaw: string; setBusca: (v: string) => void; unidadeNome: Map<string, string>; loading: boolean; onRevisar: (x: EntregaCancel) => void;
+  /** Permissão de estornar (ver src/config/permissions.ts). */
+  podeEstornar?: boolean;
 }) {
   return (
     <SectionCard title="Cancelar entrega" description="Reverta uma entrega confirmada e devolva os itens ao estoque, quando permitido.">
@@ -35,7 +37,7 @@ export function DeliveryCancellationPanel({ itens, buscaRaw, setBusca, unidadeNo
                         {elegivel ? <StatusBadge variant={b.variant}>{b.label}</StatusBadge>
                           : <Tooltip><TooltipTrigger asChild><span><StatusBadge variant={b.variant}>{b.label}</StatusBadge></span></TooltipTrigger><TooltipContent>{x.motivoBloqueio}</TooltipContent></Tooltip>}
                       </div>
-                      {elegivel && <div className="mt-2 flex justify-end"><Button variant="outline" size="sm" className="h-7 gap-1.5 text-xs" onClick={() => onRevisar(x)}>Revisar cancelamento <ChevronRight className="h-3.5 w-3.5" /></Button></div>}
+                      {elegivel && podeEstornar && <div className="mt-2 flex justify-end"><Button variant="outline" size="sm" className="h-7 gap-1.5 text-xs" onClick={() => onRevisar(x)}>Revisar cancelamento <ChevronRight className="h-3.5 w-3.5" /></Button></div>}
                       {!elegivel && <p className="mt-1 text-xs text-muted-foreground">{x.motivoBloqueio}</p>}
                     </li>
                   ); })}
@@ -47,8 +49,10 @@ export function DeliveryCancellationPanel({ itens, buscaRaw, setBusca, unidadeNo
   );
 }
 
-export function ReturnReversalPanel({ itens, buscaRaw, setBusca, unidadeNome, loading, onRevisar }: {
+export function ReturnReversalPanel({ itens, buscaRaw, setBusca, unidadeNome, loading, onRevisar, podeEstornar = true }: {
   itens: DevEstorno[]; buscaRaw: string; setBusca: (v: string) => void; unidadeNome: Map<string, string>; loading: boolean; onRevisar: (x: DevEstorno) => void;
+  /** Permissão de estornar (ver src/config/permissions.ts). */
+  podeEstornar?: boolean;
 }) {
   return (
     <SectionCard title="Estornar devolução" description="Reverta uma devolução ativa e desfaça a reentrada no estoque, quando aplicável.">
@@ -68,7 +72,7 @@ export function ReturnReversalPanel({ itens, buscaRaw, setBusca, unidadeNome, lo
                         {elegivel ? <StatusBadge variant={b.variant}>{b.label}</StatusBadge>
                           : <Tooltip><TooltipTrigger asChild><span><StatusBadge variant={b.variant}>{b.label}</StatusBadge></span></TooltipTrigger><TooltipContent>{x.motivoBloqueio}</TooltipContent></Tooltip>}
                       </div>
-                      {elegivel && <div className="mt-2 flex justify-end"><Button variant="outline" size="sm" className="h-7 gap-1.5 text-xs" onClick={() => onRevisar(x)}>Revisar estorno <ChevronRight className="h-3.5 w-3.5" /></Button></div>}
+                      {elegivel && podeEstornar && <div className="mt-2 flex justify-end"><Button variant="outline" size="sm" className="h-7 gap-1.5 text-xs" onClick={() => onRevisar(x)}>Revisar estorno <ChevronRight className="h-3.5 w-3.5" /></Button></div>}
                       {!elegivel && <p className="mt-1 text-xs text-muted-foreground">{x.motivoBloqueio}</p>}
                     </li>
                   ); })}

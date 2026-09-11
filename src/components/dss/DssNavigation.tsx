@@ -4,18 +4,24 @@ import { DSS_VIEWS, type DssView } from '@/features/dss/views';
 interface Props {
   active: DssView;
   onChange: (v: DssView) => void;
+  /** Visões permitidas ao usuário. Ausente = todas. */
+  disponiveis?: DssView[];
 }
 
-export function DssNavigation({ active, onChange }: Props) {
+export function DssNavigation({ active, onChange, disponiveis }: Props) {
+  const views = disponiveis ? DSS_VIEWS.filter((v) => disponiveis.includes(v.key)) : DSS_VIEWS;
+
   const onKeyDown = (e: React.KeyboardEvent) => {
-    const i = DSS_VIEWS.findIndex((v) => v.key === active);
-    if (e.key === 'ArrowRight' && i < DSS_VIEWS.length - 1) { e.preventDefault(); onChange(DSS_VIEWS[i + 1].key); }
-    if (e.key === 'ArrowLeft' && i > 0) { e.preventDefault(); onChange(DSS_VIEWS[i - 1].key); }
+    const i = views.findIndex((v) => v.key === active);
+    if (e.key === 'ArrowRight' && i < views.length - 1) { e.preventDefault(); onChange(views[i + 1].key); }
+    if (e.key === 'ArrowLeft' && i > 0) { e.preventDefault(); onChange(views[i - 1].key); }
   };
+
+  if (views.length <= 1) return null;
 
   return (
     <nav role="tablist" aria-label="Visões de DSS" onKeyDown={onKeyDown} className="flex gap-1.5 overflow-x-auto pb-0.5">
-      {DSS_VIEWS.map((v) => {
+      {views.map((v) => {
         const isActive = v.key === active;
         const Icon = v.icon;
         return (

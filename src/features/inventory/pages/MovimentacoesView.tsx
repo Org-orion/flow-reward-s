@@ -16,8 +16,10 @@ import { tipoMeta, direcaoMov, ORIGEM_LABEL, DIRECAO_LABEL } from '../components
 import { formatDateTimeBR } from '@/lib/dateTime';
 import { formatNumberBR } from '@/lib/formatters';
 import type { MovDetalhada } from '../services/inventoryApi';
+import { useResourceAccess } from '@/hooks/useResourceAccess';
 
 export function MovimentacoesView() {
+  const acesso = useResourceAccess('est_movimentacoes');
   const navigate = useNavigate();
   const m = useInventoryMovements();
   const [drawer, setDrawer] = useState<MovDetalhada | null>(null);
@@ -50,7 +52,7 @@ export function MovimentacoesView() {
   const acoes = (
     <div className="flex items-center gap-2">
       <Button variant="outline" className="gap-2" onClick={m.refetch}><RefreshCw className="h-4 w-4" /><span className="hidden sm:inline">Atualizar</span></Button>
-      <Button className="gap-2" onClick={exportar} disabled={m.filtradas.length === 0}><Download className="h-4 w-4" /><span className="hidden sm:inline">Exportar histórico</span></Button>
+      {acesso.podeExportar && <Button className="gap-2" onClick={exportar} disabled={m.filtradas.length === 0}><Download className="h-4 w-4" /><span className="hidden sm:inline">Exportar histórico</span></Button>}
       <DropdownMenu>
         <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-9 w-9" aria-label="Mais ações"><MoreVertical className="h-4 w-4" /></Button></DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-48">

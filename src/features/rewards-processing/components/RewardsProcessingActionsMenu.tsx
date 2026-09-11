@@ -8,6 +8,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { formatCurrencyBRL } from '@/lib/formatters';
 import type { ProcessingRow } from '../types/rewards-processing.types';
+import { useResourceAccess } from '@/hooks/useResourceAccess';
 
 interface Props {
   row: ProcessingRow;
@@ -23,6 +24,7 @@ interface Props {
 export function RewardsProcessingActionsMenu({ row, competenciaLabel, onDetails, onEmployees, onCompare, onReprocess, onReport, onDelete }: Props) {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const acesso = useResourceAccess('gerar_premiacoes');
   const canDelete = !!row.baseId;
 
   const handleDelete = async () => {
@@ -41,10 +43,10 @@ export function RewardsProcessingActionsMenu({ row, competenciaLabel, onDetails,
           <DropdownMenuItem onClick={onDetails}><Eye className="mr-2 h-4 w-4" /> Ver detalhes</DropdownMenuItem>
           <DropdownMenuItem onClick={onEmployees}><Users className="mr-2 h-4 w-4" /> Ver funcionários</DropdownMenuItem>
           <DropdownMenuItem onClick={onCompare}><GitCompareArrows className="mr-2 h-4 w-4" /> Comparar com cálculo anterior</DropdownMenuItem>
-          <DropdownMenuItem onClick={onReprocess}><RefreshCw className="mr-2 h-4 w-4" /> Reprocessar</DropdownMenuItem>
+          {acesso.pode('processar') && <DropdownMenuItem onClick={onReprocess}><RefreshCw className="mr-2 h-4 w-4" /> Reprocessar</DropdownMenuItem>}
           <DropdownMenuItem onClick={onReport}><FileBarChart2 className="mr-2 h-4 w-4" /> Abrir relatório</DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={() => setConfirmOpen(true)} disabled={!canDelete} className="text-destructive focus:text-destructive"><Trash2 className="mr-2 h-4 w-4" /> Excluir processamento</DropdownMenuItem>
+          {acesso.podeExcluir && <DropdownMenuItem onClick={() => setConfirmOpen(true)} disabled={!canDelete} className="text-destructive focus:text-destructive"><Trash2 className="mr-2 h-4 w-4" /> Excluir processamento</DropdownMenuItem>}
         </DropdownMenuContent>
       </DropdownMenu>
 

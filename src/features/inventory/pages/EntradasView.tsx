@@ -16,6 +16,7 @@ import { StockInvoiceUploader } from '../components/entry/StockInvoiceUploader';
 import { StockEntrySummary } from '../components/entry/StockEntrySummary';
 import { RecentStockEntries } from '../components/entry/RecentStockEntries';
 import { StockEntryReviewDialog, StockEntrySuccessDialog } from '../components/entry/StockEntryDialogs';
+import { useResourceAccess } from '@/hooks/useResourceAccess';
 
 const chip = 'inline-flex items-center gap-1 rounded-full bg-muted/60 px-2 py-0.5 text-[11px] text-muted-foreground';
 
@@ -24,10 +25,15 @@ export function EntradasView() {
   const e = useStockEntry();
   const [revisar, setRevisar] = useState(false);
 
+  // Permissões desta tela (ver src/config/permissions.ts).
+  const acesso = useResourceAccess('est_entradas');
+  const podeRegistrar = acesso.podeCriar;
+
   const unidadeNomeMap = useMemo(() => new Map(e.unidades.map((u) => [u.id, u.nome])), [e.unidades]);
   const varNomeMap = useMemo(() => new Map(e.fardamentos.map((f) => [f.variante.id, f.variante.nome])), [e.fardamentos]);
 
-  const confirmar = async () => { const ok = await e.confirmar(); if (ok) setRevisar(false); };
+  const confirmar = async () => {
+    if (!podeRegistrar) return; const ok = await e.confirmar(); if (ok) setRevisar(false); };
 
   const acoes = (
     <div className="flex items-center gap-2">
@@ -90,8 +96,8 @@ export function EntradasView() {
 
             <SectionCard title="4. Revisão e confirmação" description="Revise antes de registrar a entrada.">
               <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between">
-                <p className="text-sm text-muted-foreground">{e.podeRevisar ? 'Tudo pronto — revise antes de confirmar.' : 'Informe unidade, data válida e ao menos um item com quantidade.'}</p>
-                <Button size="lg" className="gap-2" disabled={!e.podeRevisar || e.saving || e.uploading} onClick={() => setRevisar(true)}>{(e.saving || e.uploading) && <Loader2 className="h-4 w-4 animate-spin" />} Revisar entrada</Button>
+                <p className="text-sm text-muted-foreground">{!podeRegistrar ? 'Você tem acesso de consulta a esta tela, mas não tem permissão para registrar a operação.' : e.podeRevisar ? 'Tudo pronto — revise antes de confirmar.' : 'Informe unidade, data válida e ao menos um item com quantidade.'}</p>
+                <Button size="lg" className="gap-2" disabled={!podeRegistrar || !e.podeRevisar || e.saving || e.uploading} onClick={() => setRevisar(true)}>{(e.saving || e.uploading) && <Loader2 className="h-4 w-4 animate-spin" />} Revisar entrada</Button>
               </div>
               {e.erro && <p className="mt-2 text-sm text-destructive">{e.erro}</p>}
             </SectionCard>
@@ -105,7 +111,7 @@ export function EntradasView() {
         </div>
       )}
 
-      <StockEntryReviewDialog open={revisar} onOpenChange={setRevisar} saving={e.saving} uploading={e.uploading} onConfirm={confirmar}
+      <StockEntryReviewDialog open={revisar && podeRegistrar} onOpenChange={setRevisar} saving={e.saving} uploading={e.uploading} onConfirm={confirmar}
         unidade={e.unidadeNome} data={e.data} rows={e.rows} totais={e.totais} temNf={!!e.nf} observacao={e.observacao} usuario={e.usuario} />
       <StockEntrySuccessDialog sucesso={e.sucesso} onOpenChange={(o) => { if (!o) e.reset(); }}
         onNova={e.reset} onVerMovimentacoes={() => navigate('/controle-estoque/movimentacoes')} onVoltar={() => navigate('/controle-estoque/fardamentos')} />

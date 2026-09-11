@@ -18,7 +18,9 @@ import { GeneralIndicatorForm } from './GeneralIndicatorForm';
 import { GeneralIndicatorsOverview } from '../pages/GeneralIndicatorsOverview';
 import { GeneralIndicatorsEvolution } from '../pages/GeneralIndicatorsEvolution';
 import { GeneralIndicatorsHistory } from '../pages/GeneralIndicatorsHistory';
-import type { GeneralPageProps } from '../pages/_shared';
+import type { GeneralPageProps, GeneralIndicatorsAccess } from '../pages/_shared';
+import { useResourceAccess } from '@/hooks/useResourceAccess';
+import { AccessDenied } from '@/components/AccessDenied';
 
 /**
  * Central de Indicadores Corporativos — 3 visões (?view=geral|evolucao|historico).
@@ -28,6 +30,20 @@ import type { GeneralPageProps } from '../pages/_shared';
  */
 export function GeneralIndicatorsShell() {
   const data = useGeneralIndicators();
+  const acessoRecurso = useResourceAccess('indicadores_gerais');
+  const campos = useMemo(() => ({
+    editarMeta: acessoRecurso.podeEditarCampo('meta'),
+    editarRealizado: acessoRecurso.podeEditarCampo('realizado'),
+  }), [acessoRecurso]);
+  // Criar/editar exigem ao menos um campo alterável — sem isso o formulário não salva.
+  const acesso = useMemo<GeneralIndicatorsAccess>(() => {
+    const algumCampo = campos.editarMeta || campos.editarRealizado;
+    return {
+      podeCriar: acessoRecurso.podeCriar && algumCampo,
+      podeEditar: acessoRecurso.podeEditar && algumCampo,
+      podeExcluir: acessoRecurso.podeExcluir,
+    };
+  }, [acessoRecurso, campos]);
   const [searchParams, setSearchParams] = useSearchParams();
   const view = normalizeGeneralIndicatorView(searchParams.get('view'));
 
@@ -68,8 +84,12 @@ export function GeneralIndicatorsShell() {
 
   const handleRefresh = async () => { setRefreshing(true); try { await data.refetch(); setLastUpdated(new Date()); } finally { setRefreshing(false); } };
 
-  const openRegister = () => { setEditing(null); setFormOpen(true); };
-  const openEdit = (registroId: string) => { const reg = data.indicadores.find((i) => i.id === registroId); if (reg) { setEditing(reg); setFormOpen(true); } };
+  const openRegister = () => { if (!acesso.podeCriar) return; setEditing(null); setFormOpen(true); };
+  const openEdit = (registroId: string) => {
+    if (!acesso.podeEditar) return;
+    const reg = data.indicadores.find((i) => i.id === registroId);
+    if (reg) { setEditing(reg); setFormOpen(true); }
+  };
   const goToEvolution = (tipoId: string) => { setSelectedTipoId(tipoId); setView('evolucao'); };
 
   const drawerSerie = useMemo(
@@ -77,6 +97,7 @@ export function GeneralIndicatorsShell() {
     [selectedRow, historyRows],
   );
 
+  if (!acessoRecurso.podeVer) return <AccessDenied area="Indicadores Gerais" />;
   if (data.loading && data.tiposIndicadores.length === 0) return <GeneralIndicatorsSkeleton />;
 
   const pageProps: GeneralPageProps = {
@@ -91,6 +112,7 @@ export function GeneralIndicatorsShell() {
     onEdit: openEdit,
     onGoToView: setView,
     onGoToEvolution: goToEvolution,
+    acesso,
   };
 
   return (
@@ -102,6 +124,7 @@ export function GeneralIndicatorsShell() {
         refreshing={refreshing}
         onRefresh={handleRefresh}
         onRegister={openRegister}
+        podeCriar={acesso.podeCriar}
       >
         <div className="flex flex-wrap items-center justify-between gap-3">
           <GeneralIndicatorsNavigation active={view} onChange={setView} />
@@ -121,6 +144,7 @@ export function GeneralIndicatorsShell() {
         onClose={() => setSelectedRow(null)}
         onEdit={(row) => { setSelectedRow(null); openEdit(row.registroId); }}
         onCompare={(row) => { setSelectedRow(null); goToEvolution(row.tipoId); }}
+        podeEditar={acesso.podeEditar}
       />
 
       <GeneralIndicatorForm
@@ -133,6 +157,7 @@ export function GeneralIndicatorsShell() {
         onCreate={data.createIndicador}
         onUpdate={(id, d) => data.updateIndicador(id, d)}
         onEditExisting={(reg) => setEditing(reg)}
+        campos={campos}
       />
     </div>
   );

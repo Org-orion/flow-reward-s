@@ -16,6 +16,7 @@ import { DssLocationDeleteDialog } from './DssLocationDeleteDialog';
 import { DssLocationsSkeleton } from './DssLocationsSkeleton';
 import { DssLocationsEmptyState } from './DssLocationsEmptyState';
 import type { DssLocationRow } from '../types/dss-location.types';
+import { useResourceAccess } from '@/hooks/useResourceAccess';
 
 /**
  * Gestão de Locais de DSS — página única. Shell orquestrador: carrega dados uma
@@ -24,6 +25,7 @@ import type { DssLocationRow } from '../types/dss-location.types';
  * o banco nem o motor.
  */
 export function DssLocationsShell() {
+  const acesso = useResourceAccess('cad_locais_dss');
   const data = useDssLocations();
   const navigate = useNavigate();
   const state = useDssLocationFilters(data.rows);
@@ -60,7 +62,7 @@ export function DssLocationsShell() {
           icon={MapPin}
           title="Nenhum local de DSS cadastrado"
           description="Cadastre locais para organizar o controle de presença dos DSS."
-          action={<Button size="sm" className="gap-1.5" onClick={openNovo}><Plus className="h-4 w-4" /> Novo local</Button>}
+          action={acesso.podeCriar ? <Button size="sm" className="gap-1.5" onClick={openNovo}><Plus className="h-4 w-4" /> Novo local</Button> : undefined}
         />
       ) : (
         <>

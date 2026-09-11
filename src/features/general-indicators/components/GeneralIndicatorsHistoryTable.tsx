@@ -14,11 +14,14 @@ interface Props {
   rows: GeneralHistoryRow[];
   onOpenDrawer: (row: GeneralHistoryRow) => void;
   onEdit: (row: GeneralHistoryRow) => void;
+  /** Permissões (ver src/config/permissions.ts). */
+  podeEditar?: boolean;
+  podeExcluir?: boolean;
   onCompare: (row: GeneralHistoryRow) => void;
   onDelete: (row: GeneralHistoryRow) => Promise<void> | void;
 }
 
-export function GeneralIndicatorsHistoryTable({ rows, onOpenDrawer, onEdit, onCompare, onDelete }: Props) {
+export function GeneralIndicatorsHistoryTable({ rows, onOpenDrawer, onEdit, onCompare, onDelete, podeEditar = true, podeExcluir = true }: Props) {
   const [asc, setAsc] = useState(false);
   const sorted = [...rows].sort((a, b) => (a.competencia === b.competencia ? a.nome.localeCompare(b.nome) : a.competencia < b.competencia ? 1 : -1) * (asc ? -1 : 1));
 
@@ -28,6 +31,8 @@ export function GeneralIndicatorsHistoryTable({ rows, onOpenDrawer, onEdit, onCo
       competenciaLabel={competenciaShortLabelBR(r.competencia)}
       onView={() => onOpenDrawer(r)}
       onEdit={() => onEdit(r)}
+      podeEditar={podeEditar}
+      podeExcluir={podeExcluir}
       onCompare={() => onCompare(r)}
       onDelete={() => onDelete(r)}
     />

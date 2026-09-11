@@ -13,6 +13,7 @@ import { SectorIndicatorsReviewDialog } from '../components/SectorIndicatorsRevi
 import { SectorIndicatorsBulkBar } from '../components/SectorIndicatorsBulkBar';
 import { SectorIndicatorsBulkDialog, type BulkMode } from '../components/SectorIndicatorsBulkDialog';
 import { useSectorIndicatorsFilters } from '../hooks/useSectorIndicatorsFilters';
+import { useResourceAccess } from '@/hooks/useResourceAccess';
 import { buildSectorRows, computeSummary } from '../domain/indicatorCalculations';
 import type { IndicatorId } from '../types/sector-indicators.types';
 import type { SectorIndicatorsPageProps } from './_shared';
@@ -23,6 +24,14 @@ export function SectorIndicatorsMonthlyView({
   const [selectedSetorId, setSelectedSetorId] = useState<string | null>(null);
   const [bulkOpen, setBulkOpen] = useState(false);
   const [bulkMode, setBulkMode] = useState<BulkMode>('metas');
+
+  // Permissões desta tela (ver src/config/permissions.ts).
+  const acesso = useResourceAccess('indicadores_setor');
+  const campos = useMemo(() => ({
+    editarMeta: acesso.podeEditarCampo('meta'),
+    editarRealizado: acesso.podeEditarCampo('realizado'),
+  }), [acesso]);
+  const podeEditar = campos.editarMeta || campos.editarRealizado;
 
   const changedSetorIds = useMemo(() => new Set(draft.diff.changedSetorIds), [draft.diff.changedSetorIds]);
 
@@ -66,6 +75,13 @@ export function SectorIndicatorsMonthlyView({
 
   const openBulk = (mode: BulkMode) => { setBulkMode(mode); setBulkOpen(true); };
 
+  // Nada entra no rascunho sem permissão no campo.
+  const alterarCampo = (indicatorId: IndicatorId, field: 'meta' | 'realizado', value: string) => {
+    if (field === 'meta' && !campos.editarMeta) return;
+    if (field === 'realizado' && !campos.editarRealizado) return;
+    if (selectedSetorId) draft.setField(selectedSetorId, indicatorId, field, value);
+  };
+
   if (data.setoresPrevistos.length === 0) {
     return <SectorIndicatorsEmptyState icon={Gauge} title="Nenhum setor ativo encontrado" description="Cadastre setores ativos para apurar os indicadores mensais." />;
   }
@@ -83,7 +99,9 @@ export function SectorIndicatorsMonthlyView({
 
       <SectionCard
         title="Matriz de Apuração"
-        description="Clique em um setor para apurar os cinco indicadores. As alterações são salvas em lote após revisão."
+        description={podeEditar
+          ? 'Clique em um setor para apurar os cinco indicadores. As alterações são salvas em lote após revisão.'
+          : 'Clique em um setor para consultar os cinco indicadores. Você não tem permissão para alterar estes dados.'}
       >
         <div className="space-y-4">
           <SectorIndicatorsFilters
@@ -118,15 +136,17 @@ export function SectorIndicatorsMonthlyView({
         </div>
       </SectionCard>
 
-      {selection.count > 0 ? (
+      {selection.count > 0 && podeEditar ? (
         <SectorIndicatorsBulkBar
           count={selection.count}
           onAplicarMetas={() => openBulk('metas')}
           onAplicarIndicadores={() => openBulk('indicadores')}
           onMarcarSemMedicao={() => { draft.markSemMedicao(selection.ids); selection.clear(); }}
           onCancel={selection.clear}
+          podeAplicarMetas={campos.editarMeta}
+          podeAplicarIndicadores={campos.editarRealizado}
         />
-      ) : (
+      ) : podeEditar ? (
         <SectorIndicatorsSaveBar
           setoresAlterados={draft.diff.totalSetoresAlterados}
           indicadoresAlterados={draft.diff.indicadoresAlterados}
@@ -134,7 +154,7 @@ export function SectorIndicatorsMonthlyView({
           onDiscard={draft.restoreAll}
           onReview={() => setReviewOpen(true)}
         />
-      )}
+      ) : null}
 
       <SectorIndicatorsReviewDialog
         open={reviewOpen}
@@ -157,16 +177,17 @@ export function SectorIndicatorsMonthlyView({
         onClose={() => setSelectedSetorId(null)}
         onPrev={() => openDrawerAt(selectedIndex - 1)}
         onNext={() => openDrawerAt(selectedIndex + 1)}
-        onCommit={(indicatorId, field, value) => { if (selectedSetorId) draft.setField(selectedSetorId, indicatorId, field, value); }}
+        onCommit={alterarCampo}
+        campos={campos}
         onRestoreIndicator={(indicatorId) => { if (selectedSetorId) draft.restoreIndicator(selectedSetorId, indicatorId); }}
-        onMarkSemMedicao={() => { if (selectedSetorId) draft.markSemMedicao([selectedSetorId]); }}
+        onMarkSemMedicao={() => { if (selectedSetorId && campos.editarRealizado) draft.markSemMedicao([selectedSetorId]); }}
         onSave={handleDrawerSave}
         onSaveNext={handleDrawerSaveNext}
         onVerIndicadoresGerais={() => onVerIndicadoresGerais({ setorId: selectedSetorId ?? undefined, competencia })}
       />
 
       <SectorIndicatorsBulkDialog
-        open={bulkOpen}
+        open={bulkOpen && (bulkMode === 'metas' ? campos.editarMeta : campos.editarRealizado)}
         mode={bulkMode}
         onOpenChange={setBulkOpen}
         selectedSetorIds={selection.ids}

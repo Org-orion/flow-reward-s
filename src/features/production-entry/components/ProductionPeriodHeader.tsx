@@ -15,12 +15,17 @@ interface Props {
   onImport: () => void;
   onToggleCompare: () => void;
   onSave: () => void;
+  /** Permissão de importar a apuração (esconde o botão). */
+  podeImportar?: boolean;
+  /** Permissão de alterar algum campo (esconde o botão de salvar). */
+  podeSalvar?: boolean;
   children?: ReactNode; // navegação + seletor de competência
 }
 
 /** Cabeçalho global compacto da Central de Apuração de Produção. */
 export function ProductionPeriodHeader({
   competencia, setoresCount, lastSaved, isDirty, changedCount, saving, comparing, onImport, onToggleCompare, onSave, children,
+  podeImportar = true, podeSalvar = true,
 }: Props) {
   return (
     <div className="rounded-2xl border border-border/70 bg-card px-5 py-4 shadow-[var(--shadow-card)]">
@@ -48,13 +53,17 @@ export function ProductionPeriodHeader({
             <Button variant={comparing ? 'default' : 'outline'} size="sm" className="h-8 gap-1.5" onClick={onToggleCompare}>
               <GitCompareArrows className="h-4 w-4" /> Comparar período
             </Button>
-            <Button variant="outline" size="sm" className="h-8 gap-1.5" onClick={onImport}>
-              <UploadCloud className="h-4 w-4" /> Importar
-            </Button>
-            <Button size="sm" className="h-8 gap-1.5" onClick={onSave} disabled={!isDirty || saving}>
-              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-              {saving ? 'Salvando...' : 'Salvar'}
-            </Button>
+            {podeImportar && (
+              <Button variant="outline" size="sm" className="h-8 gap-1.5" onClick={onImport}>
+                <UploadCloud className="h-4 w-4" /> Importar
+              </Button>
+            )}
+            {podeSalvar && (
+              <Button size="sm" className="h-8 gap-1.5" onClick={onSave} disabled={!isDirty || saving}>
+                {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                {saving ? 'Salvando...' : 'Salvar'}
+              </Button>
+            )}
           </div>
         </div>
 

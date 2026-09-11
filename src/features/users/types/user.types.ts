@@ -19,6 +19,12 @@ export interface UserRow {
   authState: AuthState;
   isSelf: boolean;
   isLastActiveAdmin: boolean;
+  /** Perfil de acesso aplicado (permissões granulares). null = nenhum. */
+  perfilAcessoId: string | null;
+  /** Exceções do usuário sobre o perfil de acesso. */
+  excecoes: { mais: string[]; menos: string[] };
+  /** Está sob o modelo granular? (tem perfil de acesso e/ou exceções.) */
+  granular: boolean;
 }
 
 export interface UserFilters {
@@ -32,4 +38,4 @@ export const DEFAULT_USER_FILTERS: UserFilters = {
   search: '', perfil: 'todos', status: 'todos', acesso: 'todos',
 };
 
-export type UsersView = 'usuarios' | 'acessos';
+export type UsersView = 'usuarios' | 'acessos' | 'perfis';

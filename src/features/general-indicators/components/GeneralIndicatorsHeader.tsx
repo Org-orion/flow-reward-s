@@ -11,6 +11,8 @@ interface Props {
   refreshing: boolean;
   onRefresh: () => void;
   onRegister: () => void;
+  /** Permissão de criar registro (ver src/config/permissions.ts). */
+  podeCriar?: boolean;
   children?: ReactNode; // navegação + seletor de competência + comparação
 }
 
@@ -19,7 +21,7 @@ interface Props {
  * é ação SECUNDÁRIA (não há mais formulário permanente no topo).
  */
 export function GeneralIndicatorsHeader({
-  competencia, indicadoresCount, lastUpdated, refreshing, onRefresh, onRegister, children,
+  competencia, indicadoresCount, lastUpdated, refreshing, onRefresh, onRegister, children, podeCriar = true,
 }: Props) {
   return (
     <div className="rounded-2xl border border-border/70 bg-card px-5 py-4 shadow-[var(--shadow-card)]">
@@ -43,9 +45,11 @@ export function GeneralIndicatorsHeader({
             <Button variant="outline" size="sm" className="h-8 gap-1.5" onClick={onRefresh} disabled={refreshing}>
               {refreshing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />} Atualizar
             </Button>
-            <Button size="sm" className="h-8 gap-1.5" onClick={onRegister}>
-              <Plus className="h-4 w-4" /> Registrar indicador
-            </Button>
+            {podeCriar && (
+              <Button size="sm" className="h-8 gap-1.5" onClick={onRegister}>
+                <Plus className="h-4 w-4" /> Registrar indicador
+              </Button>
+            )}
           </div>
         </div>
 

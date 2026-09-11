@@ -4,18 +4,24 @@ import { PRODUCTION_VIEWS, type ProductionView } from '../views';
 interface Props {
   active: ProductionView;
   onChange: (v: ProductionView) => void;
+  /** Visões permitidas ao usuário. Ausente = todas. */
+  disponiveis?: ProductionView[];
 }
 
-export function ProductionEntryNavigation({ active, onChange }: Props) {
+export function ProductionEntryNavigation({ active, onChange, disponiveis }: Props) {
+  const views = disponiveis ? PRODUCTION_VIEWS.filter((v) => disponiveis.includes(v.key)) : PRODUCTION_VIEWS;
+
   const onKeyDown = (e: React.KeyboardEvent) => {
-    const i = PRODUCTION_VIEWS.findIndex((v) => v.key === active);
-    if (e.key === 'ArrowRight' && i < PRODUCTION_VIEWS.length - 1) { e.preventDefault(); onChange(PRODUCTION_VIEWS[i + 1].key); }
-    if (e.key === 'ArrowLeft' && i > 0) { e.preventDefault(); onChange(PRODUCTION_VIEWS[i - 1].key); }
+    const i = views.findIndex((v) => v.key === active);
+    if (e.key === 'ArrowRight' && i < views.length - 1) { e.preventDefault(); onChange(views[i + 1].key); }
+    if (e.key === 'ArrowLeft' && i > 0) { e.preventDefault(); onChange(views[i - 1].key); }
   };
+
+  if (views.length <= 1) return null;
 
   return (
     <nav role="tablist" aria-label="Visões de produção" onKeyDown={onKeyDown} className="flex gap-1.5 overflow-x-auto pb-0.5">
-      {PRODUCTION_VIEWS.map((v) => {
+      {views.map((v) => {
         const isActive = v.key === active;
         const Icon = v.icon;
         return (

@@ -17,6 +17,7 @@ import { BonusPercentualRulesView } from '../pages/BonusPercentualRulesView';
 import type { BonusPercentualRowHandlers } from './BonusPercentualTimelineItem';
 import type { BonusPercentualEditorInit } from '../hooks/useBonusPercentualEditor';
 import type { BonusPercentualRow } from '../types/bonus-percentual.types';
+import { useResourceAccess } from '@/hooks/useResourceAccess';
 
 /**
  * Central de Bônus Percentual por Kits — 2 visões (?view=regras|simulador).
@@ -25,6 +26,7 @@ import type { BonusPercentualRow } from '../types/bonus-percentual.types';
  * grandeza primária). Exclusão é soft.
  */
 export function BonusPercentualShell() {
+  const acesso = useResourceAccess('cad_bonus_percentual');
   const data = useBonusPercentualConfigs();
   const [searchParams, setSearchParams] = useSearchParams();
   const view = normalizeBonusPercentualView(searchParams.get('view'));
@@ -63,7 +65,7 @@ export function BonusPercentualShell() {
           icon={Percent}
           title="Nenhuma configuração cadastrada"
           description="Cadastre a primeira regra: meta de kits, bônus da meta, tamanho do bloco e valor equivalente a 100%."
-          action={<Button size="sm" className="gap-1.5" onClick={openNova}><Plus className="h-4 w-4" /> Nova configuração</Button>}
+          action={acesso.podeCriar ? <Button size="sm" className="gap-1.5" onClick={openNova}><Plus className="h-4 w-4" /> Nova configuração</Button> : undefined}
         />
       ) : (
         <div key={view} className="animate-in fade-in slide-in-from-right-2 duration-200 motion-reduce:animate-none">

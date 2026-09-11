@@ -13,6 +13,7 @@ import { OccurrencesSaveBar } from '../OccurrencesSaveBar';
 import { OccurrencesReviewDialog } from '../OccurrencesReviewDialog';
 import { EmployeesPagination } from '@/components/employees/EmployeesPagination';
 import type { OccurrencePageProps } from './_shared';
+import { useResourceAccess } from '@/hooks/useResourceAccess';
 
 const STATUS_OPTIONS = ['Ativo', 'Férias', 'Licença', 'Rescisão'];
 
@@ -20,6 +21,20 @@ export function MonthlyEntryView({ data, draft, filtersState, selection }: Occur
   const [reviewOpen, setReviewOpen] = useState(false);
   const [discardConfirm, setDiscardConfirm] = useState(false);
   const [bulkBusy, setBulkBusy] = useState(false);
+
+  // Permissões desta tela (ver src/config/permissions.ts).
+  const acesso = useResourceAccess('faltas_advertencias');
+  const podeFaltas = acesso.podeEditarCampo('faltas');
+  const podeAdvertencias = acesso.podeEditarCampo('advertencias');
+  const podeEditar = podeFaltas || podeAdvertencias;
+
+  // Nada entra no rascunho sem permissão no campo — segunda barreira, além da
+  // trava visual do QuantityStepper.
+  const alterarCampo = (id: string, campo: 'faltas' | 'advertencias', valor: number) => {
+    if (campo === 'faltas' && !podeFaltas) return;
+    if (campo === 'advertencias' && !podeAdvertencias) return;
+    draft.setEntry(id, campo, valor);
+  };
 
   const setoresOptions = data.setores.map((s) => ({ id: s.id, nome: s.nome }));
   const categoriasOptions = data.categorias.map((c) => ({ id: c.id, nome: c.nome }));
@@ -64,15 +79,19 @@ export function MonthlyEntryView({ data, draft, filtersState, selection }: Occur
         statusOptions={STATUS_OPTIONS}
       />
 
-      <OccurrencesBulkBar
-        count={selection.count}
-        busy={bulkBusy}
-        onSetFaltas={(v) => runBulk(() => draft.bulkSetFaltas(selectedIds, v))}
-        onSetAdvertencias={(v) => runBulk(() => draft.bulkSetAdvertencias(selectedIds, v))}
-        onAdd={(f, a) => runBulk(() => draft.bulkAdd(selectedIds, f, a))}
-        onZerar={() => runBulk(() => draft.bulkZerar(selectedIds))}
-        onClear={selection.clear}
-      />
+      {podeEditar && (
+        <OccurrencesBulkBar
+          count={selection.count}
+          busy={bulkBusy}
+          onSetFaltas={(v) => runBulk(() => draft.bulkSetFaltas(selectedIds, v))}
+          onSetAdvertencias={(v) => runBulk(() => draft.bulkSetAdvertencias(selectedIds, v))}
+          onAdd={(f, a) => runBulk(() => draft.bulkAdd(selectedIds, f, a))}
+          onZerar={() => runBulk(() => draft.bulkZerar(selectedIds))}
+          onClear={selection.clear}
+          podeFaltas={podeFaltas}
+          podeAdvertencias={podeAdvertencias}
+        />
+      )}
 
       {filtersState.filtered.length === 0 ? (
         <EmptyState
@@ -90,8 +109,8 @@ export function MonthlyEntryView({ data, draft, filtersState, selection }: Occur
             onToggleSelect={selection.toggle}
             onToggleAll={() => selection.toggleAll(pageIds)}
             allSelected={allPageSelected}
-            onChangeFaltas={(id, v) => draft.setEntry(id, 'faltas', v)}
-            onChangeAdvertencias={(id, v) => draft.setEntry(id, 'advertencias', v)}
+            onChangeFaltas={(id, v) => alterarCampo(id, 'faltas', v)}
+            onChangeAdvertencias={(id, v) => alterarCampo(id, 'advertencias', v)}
             onRestore={draft.restoreEntry}
           />
           <EmployeesPagination
@@ -105,6 +124,7 @@ export function MonthlyEntryView({ data, draft, filtersState, selection }: Occur
         </>
       )}
 
+      {podeEditar && (
       <OccurrencesSaveBar
         changedCount={draft.diff.totalFuncionariosAlterados}
         totalFaltasDelta={draft.diff.totalFaltasDelta}
@@ -114,6 +134,7 @@ export function MonthlyEntryView({ data, draft, filtersState, selection }: Occur
         onReview={() => setReviewOpen(true)}
         onSave={draft.save}
       />
+      )}
 
       <OccurrencesReviewDialog
         open={reviewOpen}

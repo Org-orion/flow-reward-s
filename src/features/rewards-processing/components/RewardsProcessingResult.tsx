@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { formatCurrencyBRL } from '@/lib/formatters';
 import { formatDateTimeBR } from '@/lib/dateTime';
 import { competenciaLabelLong } from '@/features/dashboard/utils/dates';
+import { useResourceAccess } from '@/hooks/useResourceAccess';
 
 export interface ResultData {
   competencia: string;
@@ -23,6 +24,7 @@ interface Props {
 
 /** Painel de sucesso pós-processamento. */
 export function RewardsProcessingResult({ data, onDetails, onReport, onNew }: Props) {
+  const acesso = useResourceAccess('gerar_premiacoes');
   return (
     <div className="rounded-2xl border border-success/30 bg-success/[0.04] p-6">
       <div className="flex items-center gap-3">
@@ -46,7 +48,7 @@ export function RewardsProcessingResult({ data, onDetails, onReport, onNew }: Pr
       <div className="mt-5 flex flex-wrap items-center gap-2">
         <Button className="gap-1.5" onClick={onReport}><FileBarChart2 className="h-4 w-4" /> Abrir Relatório de Premiações</Button>
         <Button variant="outline" className="gap-1.5" onClick={onDetails}><Eye className="h-4 w-4" /> Ver detalhes</Button>
-        <Button variant="ghost" className="gap-1.5" onClick={onNew}><RefreshCw className="h-4 w-4" /> Novo processamento</Button>
+        {acesso.pode('processar') && <Button variant="ghost" className="gap-1.5" onClick={onNew}><RefreshCw className="h-4 w-4" /> Novo processamento</Button>}
       </div>
     </div>
   );

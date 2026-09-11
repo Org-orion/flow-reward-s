@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
@@ -18,6 +18,7 @@ import { DssRegistrationView } from "@/components/dss/pages/DssRegistrationView"
 import { DssHistoryView } from "@/components/dss/pages/DssHistoryView";
 import { DssIndicatorsView } from "@/components/dss/pages/DssIndicatorsView";
 import type { DssPageProps } from "@/components/dss/pages/_shared";
+import { useResourceAccess } from "@/hooks/useResourceAccess";
 
 /**
  * Central de Gestão de DSS — experiência paginada (3 visões).
@@ -27,7 +28,19 @@ import type { DssPageProps } from "@/components/dss/pages/_shared";
 export const DSS = () => {
   const data = useDssData();
   const [searchParams, setSearchParams] = useSearchParams();
-  const view = normalizeDssView(searchParams.get("view"));
+
+  // Permissões desta tela (ver src/config/permissions.ts).
+  const acesso = useResourceAccess("dss");
+  const viewsPermitidas = useMemo<DssView[]>(() => {
+    const vs: DssView[] = [];
+    if (acesso.podeCriar) vs.push("registro");
+    vs.push("historico", "indicadores");
+    return vs;
+  }, [acesso.podeCriar]);
+
+  // Visão pedida na URL que o usuário não pode abrir cai na primeira permitida.
+  const viewSolicitada = normalizeDssView(searchParams.get("view"));
+  const view = viewsPermitidas.includes(viewSolicitada) ? viewSolicitada : viewsPermitidas[0];
 
   const registration = useDssRegistration({
     funcionarios: data.funcionarios,
@@ -49,6 +62,7 @@ export const DSS = () => {
   }, [registration.isDirty]);
 
   const setView = (v: DssView) => {
+    if (!viewsPermitidas.includes(v)) return;
     if (view === "registro" && registration.isDirty && v !== "registro") {
       setPendingView(v);
       return;
@@ -86,7 +100,7 @@ export const DSS = () => {
   return (
     <div className="mx-auto w-full max-w-[1800px] space-y-[18px]">
       <DssHeader>
-        <DssNavigation active={view} onChange={setView} />
+        <DssNavigation active={view} onChange={setView} disponiveis={viewsPermitidas} />
       </DssHeader>
 
       <div key={view} className="animate-in fade-in slide-in-from-right-2 duration-200 motion-reduce:animate-none">

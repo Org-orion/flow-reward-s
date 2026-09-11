@@ -13,6 +13,10 @@ interface Props {
   cell: IndicatorCell;
   changed: boolean;
   disabled?: boolean;
+  /** Sem permissão no campo `meta` (ver src/config/permissions.ts). */
+  metaBloqueada?: boolean;
+  /** Sem permissão no campo `realizado`. */
+  realizadoBloqueado?: boolean;
   onCommit: (field: 'meta' | 'realizado', value: string) => void;
   onRestore: () => void;
   onCtrlEnter?: () => void;
@@ -25,7 +29,7 @@ const fmtDesvio = (d: number | null) => {
 };
 
 /** Editor de um indicador — meta/realizado + atingimento/diferença/situação/comparação. */
-export function SectorIndicatorEditor({ def, cell, changed, disabled, onCommit, onRestore, onCtrlEnter }: Props) {
+export function SectorIndicatorEditor({ def, cell, changed, disabled, metaBloqueada, realizadoBloqueado, onCommit, onRestore, onCtrlEnter }: Props) {
   const stateMeta = CELL_STATE_META[cell.state];
   return (
     <div className={cn('rounded-xl border border-border/70 p-3.5', changed && 'border-status-warning/50 bg-status-warning/[0.04]')}>
@@ -43,12 +47,16 @@ export function SectorIndicatorEditor({ def, cell, changed, disabled, onCommit, 
 
       <div className="mt-3 grid grid-cols-2 gap-3">
         <label className="space-y-1">
-          <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Meta</span>
-          <SectorIndicatorNumberInput value={cell.meta} changed={changed} disabled={disabled} ariaLabel={`Meta de ${def.label}`} onCommit={(v) => onCommit('meta', v)} onCtrlEnter={onCtrlEnter} />
+          <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+            Meta{metaBloqueada && <span className="ml-1 normal-case text-muted-foreground/70">(somente leitura)</span>}
+          </span>
+          <SectorIndicatorNumberInput value={cell.meta} changed={changed} disabled={disabled || metaBloqueada} ariaLabel={`Meta de ${def.label}`} onCommit={(v) => onCommit('meta', v)} onCtrlEnter={onCtrlEnter} />
         </label>
         <label className="space-y-1">
-          <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Realizado</span>
-          <SectorIndicatorNumberInput value={cell.realizado} changed={changed} disabled={disabled} ariaLabel={`Realizado de ${def.label}`} onCommit={(v) => onCommit('realizado', v)} onCtrlEnter={onCtrlEnter} />
+          <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+            Realizado{realizadoBloqueado && <span className="ml-1 normal-case text-muted-foreground/70">(somente leitura)</span>}
+          </span>
+          <SectorIndicatorNumberInput value={cell.realizado} changed={changed} disabled={disabled || realizadoBloqueado} ariaLabel={`Realizado de ${def.label}`} onCommit={(v) => onCommit('realizado', v)} onCtrlEnter={onCtrlEnter} />
         </label>
       </div>
 

@@ -1503,6 +1503,36 @@ export type Database = {
         }
         Relationships: []
       }
+      concremrh_perfis_acesso: {
+        Row: {
+          id: string
+          nome: string
+          descricao: string | null
+          permissoes: Json
+          ativo: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          nome: string
+          descricao?: string | null
+          permissoes?: Json
+          ativo?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          nome?: string
+          descricao?: string | null
+          permissoes?: Json
+          ativo?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       concremrh_usuarios: {
         Row: {
           id: string
@@ -1515,6 +1545,8 @@ export type Database = {
           updated_at: string
           senha_hash: string | null
           secoes: Json | null
+          perfil_acesso_id: string | null
+          permissoes: Json | null
         }
         Insert: {
           id?: string
@@ -1527,6 +1559,8 @@ export type Database = {
           updated_at?: string
           senha_hash?: string | null
           secoes?: Json | null
+          perfil_acesso_id?: string | null
+          permissoes?: Json | null
         }
         Update: {
           id?: string
@@ -1539,8 +1573,18 @@ export type Database = {
           updated_at?: string
           senha_hash?: string | null
           secoes?: Json | null
+          perfil_acesso_id?: string | null
+          permissoes?: Json | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "concremrh_usuarios_perfil_acesso_fk"
+            columns: ["perfil_acesso_id"]
+            isOneToOne: false
+            referencedRelation: "concremrh_perfis_acesso"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       remuneracaoconrem_base_premiacao: {
         Row: {

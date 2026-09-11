@@ -5,6 +5,7 @@ import { formatNumberBR, formatPercentBR } from '@/lib/formatters';
 import { ProductionNumberInput } from './ProductionNumberInput';
 import { ProductionStatusBadge } from './ProductionStatusBadge';
 import type { ProductionRow } from '../types/production-entry.types';
+import type { ProductionFieldAccess } from '../domain/productionFieldAccess';
 
 interface Props {
   row: ProductionRow;
@@ -12,6 +13,8 @@ interface Props {
   onChangeField: (field: 'meta' | 'realizado', value: string) => void;
   onRestore: () => void;
   onOpenDrawer: () => void;
+  /** Permissões de campo (ver src/config/permissions.ts). */
+  campos: ProductionFieldAccess;
 }
 
 const fmtDesvio = (d: number | null) => {
@@ -21,7 +24,7 @@ const fmtDesvio = (d: number | null) => {
 };
 
 /** Card de setor para mobile — meta e realizado grandes, situação e desvio visíveis. */
-export function ProductionEntryCard({ row, changed, onChangeField, onRestore, onOpenDrawer }: Props) {
+export function ProductionEntryCard({ row, changed, onChangeField, onRestore, onOpenDrawer, campos }: Props) {
   return (
     <div className={cn('rounded-xl border border-border/70 bg-card p-4', changed && 'border-status-warning/40 bg-status-warning/[0.03]')}>
       <div className="flex items-start justify-between gap-2">
@@ -33,20 +36,28 @@ export function ProductionEntryCard({ row, changed, onChangeField, onRestore, on
       </div>
 
       <div className="mt-3 grid grid-cols-2 gap-3">
-        <label className="space-y-1">
-          <span className="text-xs text-muted-foreground">Meta</span>
-          <ProductionNumberInput value={row.meta} changed={changed} ariaLabel={`Meta do setor ${row.setorNome}`} onCommit={(v) => onChangeField('meta', v)} />
-        </label>
-        <label className="space-y-1">
-          <span className="text-xs text-muted-foreground">Realizado</span>
-          <ProductionNumberInput value={row.realizado} changed={changed} ariaLabel={`Produção realizada do setor ${row.setorNome}`} onCommit={(v) => onChangeField('realizado', v)} />
-        </label>
+        {campos.verMeta && (
+          <label className="space-y-1">
+            <span className="text-xs text-muted-foreground">Meta</span>
+            <ProductionNumberInput value={row.meta} changed={changed} ariaLabel={`Meta do setor ${row.setorNome}`} onCommit={(v) => onChangeField('meta', v)} readOnly={!campos.editarMeta} />
+          </label>
+        )}
+        {campos.verRealizado && (
+          <label className="space-y-1">
+            <span className="text-xs text-muted-foreground">Realizado</span>
+            <ProductionNumberInput value={row.realizado} changed={changed} ariaLabel={`Produção realizada do setor ${row.setorNome}`} onCommit={(v) => onChangeField('realizado', v)} readOnly={!campos.editarRealizado} />
+          </label>
+        )}
       </div>
 
       <div className="mt-3 flex items-center justify-between text-xs">
-        <span className="text-muted-foreground">Percentual: <b className="text-foreground">{row.percentual != null ? formatPercentBR(row.percentual, 1) : '—'}</b></span>
-        <span className={cn(row.desvio != null && row.desvio < 0 ? 'text-destructive' : 'text-muted-foreground')}>Desvio: {fmtDesvio(row.desvio)}</span>
-        <div className="flex items-center gap-1">
+        {campos.verDerivados && (
+          <>
+            <span className="text-muted-foreground">Percentual: <b className="text-foreground">{row.percentual != null ? formatPercentBR(row.percentual, 1) : '—'}</b></span>
+            <span className={cn(row.desvio != null && row.desvio < 0 ? 'text-destructive' : 'text-muted-foreground')}>Desvio: {fmtDesvio(row.desvio)}</span>
+          </>
+        )}
+        <div className="ml-auto flex items-center gap-1">
           {changed && (
             <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onRestore} aria-label={`Restaurar ${row.setorNome}`}>
               <RotateCcw className="h-3.5 w-3.5" />

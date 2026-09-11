@@ -15,14 +15,29 @@ import { ProductionSectorDrawer } from '../components/ProductionSectorDrawer';
 import { ProductionSingleEntryDialog } from '../components/ProductionSingleEntryDialog';
 import { ProductionCopyMetasDialog } from '../components/ProductionCopyMetasDialog';
 import { useProductionFilters } from '../hooks/useProductionFilters';
+import { useResourceAccess } from '@/hooks/useResourceAccess';
+import { buildProductionFieldAccess } from '../domain/productionFieldAccess';
 import { buildProductionRows, computeSummary } from '../domain/productionCalculations';
 import type { ProductionRow } from '../types/production-entry.types';
 import type { ProductionPageProps } from './_shared';
+import type { ProductionFieldAccess } from '../domain/productionFieldAccess';
+
+/** Texto do card conforme o que o usuário pode de fato alterar. */
+function descricaoGrade(campos: ProductionFieldAccess): string {
+  if (!campos.podeEditarAlgum) return 'Consulta da apuração de cada setor. Você não tem permissão para alterar estes dados.';
+  if (campos.editarMeta && campos.editarRealizado) return 'Edite meta e produção realizada de cada setor. As alterações são salvas em lote após revisão.';
+  if (campos.editarRealizado) return 'Edite a produção realizada de cada setor. A meta é somente leitura. As alterações são salvas em lote após revisão.';
+  return 'Edite a meta de cada setor. A produção realizada é somente leitura. As alterações são salvas em lote após revisão.';
+}
 
 export function ProductionMonthlyEntryView({ data, draft, competencia, comparing, baselineAnterior, reviewOpen, setReviewOpen }: ProductionPageProps) {
   const [selectedRow, setSelectedRow] = useState<ProductionRow | null>(null);
   const [singleOpen, setSingleOpen] = useState(false);
   const [copyOpen, setCopyOpen] = useState(false);
+
+  // Permissões desta tela (ver src/config/permissions.ts).
+  const acesso = useResourceAccess('producao_setor');
+  const campos = useMemo(() => buildProductionFieldAccess(acesso), [acesso]);
 
   const changedSetorIds = useMemo(() => new Set(draft.diff.changedSetorIds), [draft.diff.changedSetorIds]);
 
@@ -44,6 +59,14 @@ export function ProductionMonthlyEntryView({ data, draft, competencia, comparing
 
   const empresasOpt = data.empresas.map((e) => ({ id: e.id, nome: e.nome }));
   const setoresOpt = data.setoresPrevistos.map((s) => ({ id: s.id, nome: s.nome }));
+
+  // Nenhuma alteração entra no rascunho sem permissão no campo — a trava visual
+  // é a primeira barreira, esta é a segunda.
+  const alterarCampo = (setorId: string, field: 'meta' | 'realizado', value: string) => {
+    if (field === 'meta' && !campos.editarMeta) return;
+    if (field === 'realizado' && !campos.editarRealizado) return;
+    draft.setField(setorId, field, value);
+  };
 
   const handleConfirmSave = async () => {
     const ok = await draft.save(unidadePorSetor);
@@ -67,17 +90,23 @@ export function ProductionMonthlyEntryView({ data, draft, competencia, comparing
 
       <SectionCard
         title="Grade de Apuração"
-        description="Edite meta e produção realizada de cada setor. As alterações são salvas em lote após revisão."
+        description={descricaoGrade(campos)}
       >
         <div className="space-y-4">
-          <div className="flex flex-wrap items-center gap-2">
-            <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setCopyOpen(true)}>
-              <Copy className="h-3.5 w-3.5" /> Copiar metas do mês anterior
-            </Button>
-            <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setSingleOpen(true)}>
-              <Plus className="h-3.5 w-3.5" /> Adicionar registro
-            </Button>
-          </div>
+          {(campos.editarMeta || acesso.podeCriar) && (
+            <div className="flex flex-wrap items-center gap-2">
+              {campos.editarMeta && (
+                <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setCopyOpen(true)}>
+                  <Copy className="h-3.5 w-3.5" /> Copiar metas do mês anterior
+                </Button>
+              )}
+              {acesso.podeCriar && (
+                <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setSingleOpen(true)}>
+                  <Plus className="h-3.5 w-3.5" /> Adicionar registro
+                </Button>
+              )}
+            </div>
+          )}
 
           <ProductionFilters
             searchInput={filtersState.searchInput}
@@ -93,9 +122,10 @@ export function ProductionMonthlyEntryView({ data, draft, competencia, comparing
             rows={filtersState.paged}
             changedSetorIds={changedSetorIds}
             comparing={comparing}
-            onChangeField={(setorId, field, value) => draft.setField(setorId, field, value)}
+            onChangeField={alterarCampo}
             onRestore={(setorId) => draft.restoreEntry(setorId)}
             onOpenDrawer={setSelectedRow}
+            campos={campos}
           />
 
           <EmployeesPagination
@@ -109,6 +139,7 @@ export function ProductionMonthlyEntryView({ data, draft, competencia, comparing
         </div>
       </SectionCard>
 
+      {campos.podeEditarAlgum && (
       <ProductionSaveBar
         setoresAlterados={draft.diff.totalSetoresAlterados}
         metasAlteradas={draft.diff.metasAlteradas}
@@ -117,6 +148,7 @@ export function ProductionMonthlyEntryView({ data, draft, competencia, comparing
         onDiscard={draft.restoreAll}
         onReview={() => setReviewOpen(true)}
       />
+      )}
 
       <ProductionReviewDialog
         open={reviewOpen}
@@ -137,7 +169,7 @@ export function ProductionMonthlyEntryView({ data, draft, competencia, comparing
       />
 
       <ProductionSingleEntryDialog
-        open={singleOpen}
+        open={singleOpen && acesso.podeCriar}
         onOpenChange={setSingleOpen}
         setores={data.setores}
         competenciaAtual={competencia}
@@ -146,7 +178,7 @@ export function ProductionMonthlyEntryView({ data, draft, competencia, comparing
       />
 
       <ProductionCopyMetasDialog
-        open={copyOpen}
+        open={copyOpen && campos.editarMeta}
         onOpenChange={setCopyOpen}
         competenciaDestino={competencia}
         registros={data.registros}

@@ -13,6 +13,7 @@ import { DeliveryCancellationPanel, ReturnReversalPanel } from '../components/re
 import { ReversalReviewDialog, type ReversalAlvo } from '../components/reversals/ReversalReviewDialog';
 import { RecentReversals } from '../components/reversals/RecentReversals';
 import { formatDateTimeBR } from '@/lib/dateTime';
+import { useResourceAccess } from '@/hooks/useResourceAccess';
 
 const chip = 'inline-flex items-center gap-1 rounded-full bg-muted/60 px-2 py-0.5 text-[11px] text-muted-foreground';
 const ALL = '__all__';
@@ -22,8 +23,12 @@ export function EstornosView() {
   const r = useInventoryReversals();
   const [alvo, setAlvo] = useState<ReversalAlvo | null>(null);
 
+  // Permissões desta tela (ver src/config/permissions.ts).
+  const acesso = useResourceAccess('est_estornos');
+  const podeEstornar = acesso.pode('estornar');
+
   const confirmar = async (motivo: string) => {
-    if (!alvo) return;
+    if (!alvo || !podeEstornar) return;
     const ok = alvo.kind === 'cancel' ? await r.confirmarCancelamento(alvo.entrega.e, motivo) : await r.confirmarEstorno(alvo.dev.d, motivo);
     if (ok) setAlvo(null);
   };
@@ -38,8 +43,8 @@ export function EstornosView() {
     </div>
   );
 
-  const painelEntrega = <DeliveryCancellationPanel itens={r.entregasCancel} buscaRaw={r.buscaEntregaRaw} setBusca={r.setBuscaEntrega} unidadeNome={r.unidadeNome} loading={r.loading} onRevisar={(x) => setAlvo({ kind: 'cancel', entrega: x })} />;
-  const painelDev = <ReturnReversalPanel itens={r.devsEstorno} buscaRaw={r.buscaDevRaw} setBusca={r.setBuscaDev} unidadeNome={r.unidadeNome} loading={r.loading} onRevisar={(x) => setAlvo({ kind: 'estorno', dev: x })} />;
+  const painelEntrega = <DeliveryCancellationPanel itens={r.entregasCancel} buscaRaw={r.buscaEntregaRaw} setBusca={r.setBuscaEntrega} unidadeNome={r.unidadeNome} loading={r.loading} onRevisar={(x) => setAlvo({ kind: 'cancel', entrega: x })} podeEstornar={podeEstornar} />;
+  const painelDev = <ReturnReversalPanel itens={r.devsEstorno} buscaRaw={r.buscaDevRaw} setBusca={r.setBuscaDev} unidadeNome={r.unidadeNome} loading={r.loading} onRevisar={(x) => setAlvo({ kind: 'estorno', dev: x })} podeEstornar={podeEstornar} />;
 
   const acoes = (
     <div className="flex items-center gap-2">
@@ -83,7 +88,7 @@ export function EstornosView() {
         </>
       )}
 
-      <ReversalReviewDialog alvo={alvo} onOpenChange={(o) => { if (!o) setAlvo(null); }} saving={r.saving} saldoDe={r.saldoDe} custoDe={r.custoDe} unidadeNome={r.unidadeNome} onConfirm={confirmar} />
+      <ReversalReviewDialog alvo={podeEstornar ? alvo : null} onOpenChange={(o) => { if (!o) setAlvo(null); }} saving={r.saving} saldoDe={r.saldoDe} custoDe={r.custoDe} unidadeNome={r.unidadeNome} onConfirm={confirmar} />
     </div>
   );
 }

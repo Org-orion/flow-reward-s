@@ -18,6 +18,7 @@ import { KitsConfigRulesView } from '../pages/KitsConfigRulesView';
 import type { KitsConfigRowHandlers } from './KitsConfigTimelineItem';
 import type { KitsEditorInit } from '../hooks/useKitsConfigEditor';
 import type { KitsConfigRow } from '../types/kits-config.types';
+import { useResourceAccess } from '@/hooks/useResourceAccess';
 
 /**
  * Central de Regras de Premiação por Kits — 2 visões (?view=regras|simulador).
@@ -26,6 +27,7 @@ import type { KitsConfigRow } from '../types/kits-config.types';
  * o motor nem o banco; exclusão soft e protegida.
  */
 export function KitsConfigShell() {
+  const acesso = useResourceAccess('cad_configuracoes_kits');
   const data = useKitsConfigs();
   const [searchParams, setSearchParams] = useSearchParams();
   const view = normalizeKitsConfigView(searchParams.get('view'));
@@ -65,7 +67,7 @@ export function KitsConfigShell() {
           icon={PackageCheck}
           title="Nenhuma configuração cadastrada"
           description="Cadastre a primeira regra de bônus por kits (vigência, mínimo, incremento e bônus)."
-          action={<Button size="sm" className="gap-1.5" onClick={openNova}><Plus className="h-4 w-4" /> Nova configuração</Button>}
+          action={acesso.podeCriar ? <Button size="sm" className="gap-1.5" onClick={openNova}><Plus className="h-4 w-4" /> Nova configuração</Button> : undefined}
         />
       ) : (
         <div key={view} className="animate-in fade-in slide-in-from-right-2 duration-200 motion-reduce:animate-none">

@@ -12,6 +12,7 @@ import { situacaoDaLinha, SITUACAO_VARIANT } from './situacao';
 import { MOVEMENT_TYPE_LABEL, MOVEMENT_IS_ENTRADA } from '../../domain/domainConstants';
 import type { FardamentoRow } from '../../types/db.types';
 import type { UltimaMov } from '../../hooks/useInventoryScreen';
+import { useResourceAccess } from '@/hooks/useResourceAccess';
 
 interface Props {
   rows: FardamentoRow[];
@@ -66,6 +67,7 @@ function ultimaMovResumo(u: UltimaMov) {
 }
 
 function RowMenu({ f, onOpen, onToggleAtivo }: Pick<Props, 'onOpen' | 'onToggleAtivo'> & { f: FardamentoRow }) {
+  const acesso = useResourceAccess('est_fardamentos');
   const navigate = useNavigate();
   const ativo = f.variante.ativo !== false;
   return (
@@ -82,8 +84,8 @@ function RowMenu({ f, onOpen, onToggleAtivo }: Pick<Props, 'onOpen' | 'onToggleA
         <DropdownMenuItem onClick={() => navigate('/controle-estoque/cadastros')}><Pencil className="mr-2 h-4 w-4" /> Editar cadastro</DropdownMenuItem>
         <DropdownMenuSeparator />
         {ativo
-          ? <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => onToggleAtivo(f)}><PowerOff className="mr-2 h-4 w-4" /> Inativar</DropdownMenuItem>
-          : <DropdownMenuItem onClick={() => onToggleAtivo(f)}><Power className="mr-2 h-4 w-4" /> Reativar</DropdownMenuItem>}
+          ? acesso.podeEditar && <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => onToggleAtivo(f)}><PowerOff className="mr-2 h-4 w-4" /> Inativar</DropdownMenuItem>
+          : acesso.podeEditar && <DropdownMenuItem onClick={() => onToggleAtivo(f)}><Power className="mr-2 h-4 w-4" /> Reativar</DropdownMenuItem>}
       </DropdownMenuContent>
     </DropdownMenu>
   );

@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { competenciaLabelLong } from '@/features/dashboard/utils/dates';
 import { formatDateTimeBR } from '@/lib/dateTime';
+import { useResourceAccess } from '@/hooks/useResourceAccess';
 
 interface OccurrencesHeaderProps {
   competencia: string;
@@ -20,6 +21,7 @@ interface OccurrencesHeaderProps {
 export function OccurrencesHeader({
   competencia, funcionariosCount, lastSaved, isDirty, changedCount, saving, onImport, onSave, children,
 }: OccurrencesHeaderProps) {
+  const acesso = useResourceAccess('faltas_advertencias');
   const savedLabel = lastSaved ? formatDateTimeBR(lastSaved) : null;
 
   return (
@@ -45,13 +47,17 @@ export function OccurrencesHeader({
                 <span className="h-1.5 w-1.5 rounded-full bg-status-warning" /> {changedCount} alteração(ões) não salva(s)
               </span>
             )}
-            <Button variant="outline" size="sm" className="h-8 gap-1.5" onClick={onImport}>
-              <UploadCloud className="h-4 w-4" /> Importar
-            </Button>
+            {acesso.podeImportar && (
+              <Button variant="outline" size="sm" className="h-8 gap-1.5" onClick={onImport}>
+                <UploadCloud className="h-4 w-4" /> Importar
+              </Button>
+            )}
+            {acesso.podeEditar && (
             <Button size="sm" className="h-8 gap-1.5" onClick={onSave} disabled={!isDirty || saving}>
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
               {saving ? 'Salvando...' : 'Salvar'}
             </Button>
+            )}
           </div>
         </div>
 

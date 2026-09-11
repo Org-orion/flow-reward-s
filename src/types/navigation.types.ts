@@ -19,6 +19,12 @@ export interface SidebarNavItem {
   children?: SidebarNavItem[];
   /** Seção exigida (canAccess). admin sempre passa (via canAccess). */
   section?: SectionKey;
+  /**
+   * Recurso (tela) exigido — exige a ação 'ver' nas permissões granulares.
+   * Ver src/config/permissions.ts. Para usuário legado a checagem equivale à
+   * seção do recurso, então não altera o que ele já enxergava.
+   */
+  resource?: string;
   /** Visível apenas para administradores. */
   adminOnly?: boolean;
   /** Correspondência exata para o estado ativo (raízes de dashboard). */
@@ -29,4 +35,12 @@ export interface SidebarNavItem {
 export interface NavPermissionContext {
   isAdmin: boolean;
   canAccess: (section: SectionKey) => boolean;
+  /** Ação em um recurso (tela). Ver src/config/permissions.ts. */
+  can: (resource: string, action: 'ver') => boolean;
+  /**
+   * O usuário já está no modelo granular? O filtro por `resource` só se aplica
+   * a ele — usuário legado continua governado apenas por seção/perfil, sem
+   * qualquer mudança no que já enxergava.
+   */
+  isGranular: boolean;
 }

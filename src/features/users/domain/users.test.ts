@@ -114,6 +114,7 @@ describe('filtros e contexto', () => {
     nome: 'Fulano', email: 'f@c.com', secoes: [], createdAt: null,
     access: deriveUserAccess(over.perfil, over.secoes ?? []),
     authState: deriveAuthState(null, 'custom'), isSelf: false, isLastActiveAdmin: false,
+    perfilAcessoId: null, excecoes: { mais: [], menos: [] }, granular: false,
     ...over,
   });
   const admin = mkRow({ id: 'a1', nome: 'Kaio Melo', email: 'kaio@concrem.com', perfil: 'admin', ativo: true, secoes: [] });

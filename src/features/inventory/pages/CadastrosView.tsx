@@ -27,6 +27,7 @@ import {
   ativoDe, norm, proximoCodigo, tituloRegistro,
   type MasterKey, type MasterCtx, type Ordenacao, type Row, type StatusFiltro,
 } from '../components/masterdata/masterShared';
+import { useResourceAccess } from '@/hooks/useResourceAccess';
 
 const KEYS: MasterKey[] = ['categorias', 'modelos', 'tamanhos', 'variantes', 'unidades', 'fornecedores'];
 const TAB_LABEL: Record<MasterKey, string> = {
@@ -71,6 +72,7 @@ function linhasExport(key: MasterKey, rows: Row[], ctx: MasterCtx): { header: st
 export function CadastrosView() {
   const data = useInventoryMasterData();
   const isAdmin = useIsAdmin();
+  const acesso = useResourceAccess('est_cadastros');
   const [sp, setSp] = useSearchParams();
 
   const tabParam = sp.get('tab') as MasterKey | null;
@@ -159,7 +161,7 @@ export function CadastrosView() {
     const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `cadastro-${tab}.csv`; a.click(); URL.revokeObjectURL(url);
   };
 
-  const podeCriar = !cfg.criarBloqueado;
+  const podeCriar = !cfg.criarBloqueado && acesso.podeCriar;
   const botaoNovo = (
     <Button className="gap-2" onClick={() => setForm({ open: true, editing: null })} disabled={!podeCriar}>
       <Plus className="h-4 w-4" /> {cfg.novoLabel}
@@ -174,7 +176,7 @@ export function CadastrosView() {
       <DropdownMenu>
         <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-9 w-9" aria-label="Mais ações"><MoreVertical className="h-4 w-4" /></Button></DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-48">
-          <DropdownMenuItem onClick={exportar} disabled={filtradas.length === 0}><Download className="mr-2 h-4 w-4" /> Exportar cadastro</DropdownMenuItem>
+          {acesso.podeExportar && <DropdownMenuItem onClick={exportar} disabled={filtradas.length === 0}><Download className="mr-2 h-4 w-4" /> Exportar cadastro</DropdownMenuItem>}
           <DropdownMenuItem onClick={data.refetch}><RefreshCw className="mr-2 h-4 w-4" /> Atualizar dados</DropdownMenuItem>
           <DropdownMenuItem onClick={() => setStatus('inativos')}><EyeOff className="mr-2 h-4 w-4" /> Ver registros inativos</DropdownMenuItem>
         </DropdownMenuContent>

@@ -17,6 +17,7 @@ import { GeneralIndicatorTypeDeleteDialog } from './GeneralIndicatorTypeDeleteDi
 import { GeneralIndicatorTypesSkeleton } from './GeneralIndicatorTypesSkeleton';
 import { GeneralIndicatorTypesEmptyState } from './GeneralIndicatorTypesEmptyState';
 import type { GeneralIndicatorTypeRow } from '../types/general-indicator-type.types';
+import { useResourceAccess } from '@/hooks/useResourceAccess';
 
 /**
  * Gestão de Indicadores Gerais — página única. Shell orquestrador: carrega dados
@@ -25,6 +26,7 @@ import type { GeneralIndicatorTypeRow } from '../types/general-indicator-type.ty
  * com medições. Não altera o banco nem o motor. Distinto dos SETORIAIS.
  */
 export function GeneralIndicatorTypesShell() {
+  const acesso = useResourceAccess('cad_tipos_indicadores_gerais');
   const data = useGeneralIndicatorTypes();
   const navigate = useNavigate();
   const state = useGeneralIndicatorTypeFilters(data.rows);
@@ -59,7 +61,7 @@ export function GeneralIndicatorTypesShell() {
           icon={BarChart3}
           title="Nenhum indicador geral cadastrado"
           description="Cadastre os indicadores consolidados usados na avaliação da empresa."
-          action={<Button size="sm" className="gap-1.5" onClick={openNovo}><Plus className="h-4 w-4" /> Novo indicador geral</Button>}
+          action={acesso.podeCriar ? <Button size="sm" className="gap-1.5" onClick={openNovo}><Plus className="h-4 w-4" /> Novo indicador geral</Button> : undefined}
         />
       ) : (
         <>

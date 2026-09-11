@@ -7,6 +7,7 @@ import { RewardBaseStatus } from './RewardBaseStatus';
 import { RewardBaseTipoBadge } from './RewardBaseParameter';
 import { RewardBaseUsage } from './RewardBaseUsage';
 import type { RewardBaseRow } from '../types/reward-base.types';
+import { useResourceAccess } from '@/hooks/useResourceAccess';
 
 interface Props {
   row: RewardBaseRow | null;
@@ -17,6 +18,7 @@ interface Props {
 }
 
 export function RewardBaseDrawer({ row, onClose, onEdit, onVinculos, onProcessamentos }: Props) {
+  const acesso = useResourceAccess('cad_base_premiacao');
   if (!row) return <Sheet open={false} onOpenChange={() => {}}><SheetContent /></Sheet>;
   const r = row;
   const u = r.usage;
@@ -83,7 +85,9 @@ export function RewardBaseDrawer({ row, onClose, onEdit, onVinculos, onProcessam
         </div>
 
         <div className="border-t border-border/60 px-5 py-3">
-          <Button className="w-full gap-1.5" onClick={() => onEdit(r)}><Pencil className="h-4 w-4" /> Editar base</Button>
+          {acesso.podeEditar && (
+            <Button className="w-full gap-1.5" onClick={() => onEdit(r)}><Pencil className="h-4 w-4" /> Editar base</Button>
+          )}
         </div>
       </SheetContent>
     </Sheet>

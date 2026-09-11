@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
@@ -19,6 +19,7 @@ import { EpiNonConformitiesView } from "@/components/epi/pages/EpiNonConformitie
 import { EpiHistoryView } from "@/components/epi/pages/EpiHistoryView";
 import { EpiIndicatorsView } from "@/components/epi/pages/EpiIndicatorsView";
 import type { EpiPageProps } from "@/components/epi/pages/_shared";
+import { useResourceAccess } from "@/hooks/useResourceAccess";
 
 /**
  * Central de Auditoria e Conformidade de EPI — experiência paginada (4 visões).
@@ -28,11 +29,24 @@ import type { EpiPageProps } from "@/components/epi/pages/_shared";
 export const EPI = () => {
   const data = useEpiData();
   const [searchParams, setSearchParams] = useSearchParams();
-  const view = normalizeEpiView(searchParams.get("view"));
+
+  // Permissões desta tela (ver src/config/permissions.ts).
+  const acesso = useResourceAccess("epi");
+  const viewsPermitidas = useMemo<EpiView[]>(() => {
+    const vs: EpiView[] = [];
+    if (acesso.podeCriar) vs.push("auditoria");
+    vs.push("nao-conformidades", "historico", "indicadores");
+    return vs;
+  }, [acesso.podeCriar]);
+
+  // Visão pedida na URL que o usuário não pode abrir cai na primeira permitida.
+  const viewSolicitada = normalizeEpiView(searchParams.get("view"));
+  const view = viewsPermitidas.includes(viewSolicitada) ? viewSolicitada : viewsPermitidas[0];
 
   const [pendingView, setPendingView] = useState<EpiView | null>(null);
 
   const setView = (v: EpiView) => {
+    if (!viewsPermitidas.includes(v)) return;
     const sp = new URLSearchParams(searchParams);
     sp.set("view", v);
     setSearchParams(sp);
@@ -90,7 +104,7 @@ export const EPI = () => {
   return (
     <div className="mx-auto w-full max-w-[1800px] space-y-[18px]">
       <EpiHeader>
-        <EpiNavigation active={view} onChange={goToView} />
+        <EpiNavigation active={view} onChange={goToView} disponiveis={viewsPermitidas} />
       </EpiHeader>
 
       <div key={view} className="animate-in fade-in slide-in-from-right-2 duration-200 motion-reduce:animate-none">

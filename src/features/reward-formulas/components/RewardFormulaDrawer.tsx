@@ -7,6 +7,7 @@ import { RewardFormulaStatus } from './RewardFormulaStatus';
 import { RewardFormulaTotal } from './RewardFormulaTotal';
 import { RewardFormulaWeightDistribution } from './RewardFormulaWeightDistribution';
 import type { RewardFormulaRow } from '../types/reward-formula.types';
+import { useResourceAccess } from '@/hooks/useResourceAccess';
 
 interface Props {
   row: RewardFormulaRow | null;
@@ -20,6 +21,7 @@ interface Props {
 const pct = (n: number) => formatPercentBR(n, Number.isInteger(n) ? 0 : 1);
 
 export function RewardFormulaDrawer({ row, onClose, onEdit, onDuplicar, onComparar, onVerUtilizacao }: Props) {
+  const acesso = useResourceAccess('cad_formulas_calculo');
   if (!row) return <Sheet open={false} onOpenChange={() => {}}><SheetContent /></Sheet>;
   const r = row;
   const entries = weightEntries(r.weights);
@@ -91,7 +93,9 @@ export function RewardFormulaDrawer({ row, onClose, onEdit, onDuplicar, onCompar
         </div>
 
         <div className="border-t border-border/60 px-5 py-3">
-          <Button className="w-full gap-1.5" onClick={() => onEdit(r)}><Pencil className="h-4 w-4" /> Editar fórmula</Button>
+          {acesso.podeEditar && (
+            <Button className="w-full gap-1.5" onClick={() => onEdit(r)}><Pencil className="h-4 w-4" /> Editar fórmula</Button>
+          )}
         </div>
       </SheetContent>
     </Sheet>

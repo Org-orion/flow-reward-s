@@ -7,8 +7,12 @@ import { Button } from '@/components/ui/button';
  * Estado consistente de acesso negado por SEÇÃO/permissão (não confundir com 404
  * nem tela em branco). Não expõe nomes técnicos de permissões. A autorização de
  * verdade é do servidor (RLS/RPC) — esta tela é só a experiência.
+ *
+ * `area` = nome AMIGÁVEL da tela/módulo negado (ex.: 'Produção por Setor').
+ * Sem ele a mensagem fica genérica — nunca cite um módulo fixo aqui, porque
+ * este componente é usado por rotas e telas de TODOS os módulos.
  */
-export function AccessDenied({ area = 'esta área' }: { area?: string }) {
+export function AccessDenied({ area }: { area?: string }) {
   const { profile } = useAuth();
   const dashboard = profile ? DEFAULT_ROUTE[profile.perfil] : '/';
 
@@ -20,8 +24,10 @@ export function AccessDenied({ area = 'esta área' }: { area?: string }) {
         </span>
         <h1 className="mt-5 text-xl font-bold text-foreground">Acesso não autorizado</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Seu usuário não possui permissão para acessar {area} do Controle de Farda.
-          Solicite acesso ao administrador em Usuários e Acessos.
+          {area
+            ? <>Seu usuário não possui permissão para acessar <strong className="text-foreground">{area}</strong>.</>
+            : 'Seu usuário não possui permissão para acessar esta tela.'}
+          {' '}Solicite acesso ao administrador em Usuários e Acessos.
         </p>
         <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:justify-center">
           <Button asChild variant="outline" className="gap-2"><Link to="/"><Home className="h-4 w-4" /> Voltar ao Hub</Link></Button>

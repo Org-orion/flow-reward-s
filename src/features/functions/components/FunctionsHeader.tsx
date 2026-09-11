@@ -1,10 +1,12 @@
 import { Briefcase, Plus } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
+import { useResourceAccess } from '@/hooks/useResourceAccess';
 
 interface Props { onNovaFuncao: () => void; children?: ReactNode }
 
 export function FunctionsHeader({ onNovaFuncao, children }: Props) {
+  const acesso = useResourceAccess('cad_funcoes');
   return (
     <div className="rounded-2xl border border-border/70 bg-card px-5 py-4 shadow-[var(--shadow-card)]">
       <div className="flex flex-col gap-3">
@@ -18,7 +20,9 @@ export function FunctionsHeader({ onNovaFuncao, children }: Props) {
               <p className="text-xs text-muted-foreground">Gestão, utilização e padronização das funções dos funcionários.</p>
             </div>
           </div>
-          <Button size="sm" className="h-8 gap-1.5" onClick={onNovaFuncao}><Plus className="h-4 w-4" /> Nova função</Button>
+          {acesso.podeCriar && (
+            <Button size="sm" className="h-8 gap-1.5" onClick={onNovaFuncao}><Plus className="h-4 w-4" /> Nova função</Button>
+          )}
         </div>
         {children && <div className="border-t border-border/60 pt-3">{children}</div>}
       </div>

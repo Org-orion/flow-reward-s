@@ -32,11 +32,17 @@ as $function$
   select case when u.id is null then jsonb_build_object('ok', false)
     else jsonb_build_object(
       'ok', true, 'id', u.id::text, 'email', u.email,
-      'nome', u.nome, 'perfil', u.perfil, 'secoes', coalesce(u.secoes, '[]'::jsonb)
+      'nome', u.nome, 'perfil', u.perfil, 'secoes', coalesce(u.secoes, '[]'::jsonb),
+      -- Permissões granulares efetivas (NULL = usuário legado, governado por `secoes`).
+      -- Ver supabase/migrations/20260910000000_permissoes_granulares.sql.
+      'permissoes', public.concremrh_permissoes_efetivas(u.id),
+      'perfil_acesso', pa.nome
     ) end
   from (select auth.uid() as uid) s
   left join public.concremrh_usuarios u
     on u.auth_user_id = s.uid and u.ativo = true
+  left join public.concremrh_perfis_acesso pa
+    on pa.id = u.perfil_acesso_id and pa.ativo = true
   limit 1;
 $function$;
 
