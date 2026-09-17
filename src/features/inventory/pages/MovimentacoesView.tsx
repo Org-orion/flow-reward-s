@@ -14,6 +14,7 @@ import { InventoryMovementDrawer } from '../components/movements/InventoryMoveme
 import { MovementGroups } from '../components/movements/MovementGroups';
 import { tipoMeta, direcaoMov, ORIGEM_LABEL, DIRECAO_LABEL } from '../components/movements/movementMeta';
 import { formatDateTimeBR } from '@/lib/dateTime';
+import { competenciaLabelLong } from '@/features/dashboard/utils/dates';
 import { formatNumberBR } from '@/lib/formatters';
 import type { MovDetalhada } from '../services/inventoryApi';
 import { useResourceAccess } from '@/hooks/useResourceAccess';
@@ -82,13 +83,27 @@ export function MovimentacoesView() {
           <InventoryMovementsStats stats={m.stats} loading={m.loading} onSelect={onSelectStat} />
           <FlowSummary pecasIn={m.fluxo.pecasIn} pecasOut={m.fluxo.pecasOut} liquido={m.fluxo.liquido} operacoes={m.fluxo.operacoes} unidadeMais={m.fluxo.unidadeMais} itemMais={m.fluxo.itemMais} loading={m.loading} />
           <InventoryMovementsFilters filtros={m.filtros} buscaRaw={m.buscaRaw} opcoes={m.opcoes} ordenacao={m.ordenacao} agrupamento={m.agrupamento} resultado={m.filtradas.length}
-            onSetBusca={m.setBusca} onSetFiltro={m.setFiltro} onSetOrdenacao={m.setOrdenacao} onSetAgrupamento={m.setAgrupamento} onLimpar={m.limpar} />
+            onSetBusca={m.setBusca} onSetFiltro={m.setFiltro} onSetOrdenacao={m.setOrdenacao} onSetAgrupamento={m.setAgrupamento} onLimpar={m.limpar} onSetMesRef={m.setMesRef} />
 
-          <SectionCard title={m.agrupamento === 'lista' ? 'Histórico' : 'Resumo agrupado'} description={`Janela: até ${m.janela} movimentações mais recentes (${m.totalCarregado} carregadas).`}>
+          <SectionCard
+            title={m.agrupamento === 'lista' ? 'Histórico' : 'Resumo agrupado'}
+            description={m.mesRange
+              // Mês fechado é consultado no servidor: o histórico inteiro do mês
+              // está aqui, não só o pedaço que couber na janela das mais recentes.
+              ? `Mês de ${competenciaLabelLong(m.filtros.mesRef)} — ${m.totalCarregado} movimentação(ões) no mês.`
+              : `Janela: até ${m.janela} movimentações mais recentes (${m.totalCarregado} carregadas).`}
+          >
             {m.loading ? (
               <div className="space-y-2.5">{[0, 1, 2, 3, 4, 5].map((i) => <div key={i} className="h-11 w-full animate-pulse rounded bg-muted" />)}</div>
             ) : m.filtradas.length === 0 ? (
-              m.totalCarregado === 0 ? (
+              // Com um mês fechado selecionado, vazio significa "nada NAQUELE mês" —
+              // não "nada registrado no sistema". Confundir os dois faria o usuário
+              // achar que perdeu o histórico.
+              m.mesRange ? (
+                <EmptyState icon={ArrowLeftRight} title={`Nenhuma movimentação em ${competenciaLabelLong(m.filtros.mesRef)}`}
+                  description="Escolha outro mês ou volte para um dos períodos rápidos."
+                  action={<Button variant="outline" onClick={() => m.setFiltro('periodo', '30d')}>Voltar para 30 dias</Button>} />
+              ) : m.totalCarregado === 0 ? (
                 <EmptyState icon={ArrowLeftRight} title="Nenhuma movimentação registrada" description="As entradas, entregas, devoluções e ajustes aparecerão aqui."
                   action={<div className="flex gap-2"><Button onClick={() => navigate('/controle-estoque/entradas')}>Registrar entrada</Button><Button variant="outline" onClick={() => navigate('/controle-estoque/entregas')}>Nova entrega</Button></div>} />
               ) : (

@@ -253,9 +253,22 @@ function mapItens(itens: unknown): MovItemDet[] {
 }
 
 /** Movimentações recentes com itens embutidos + operador. Alimenta última-movimentação, atividade e drawer. */
-export async function getMovimentacoesDetalhadas(limit = 300): Promise<MovDetalhada[]> {
+/** Faixa [inicio, fim) para consultar um período específico no SERVIDOR. */
+export interface MovPeriodo { inicio: Date; fim: Date }
+
+/**
+ * Movimentações detalhadas. Sem `periodo`, traz as `limit` mais recentes.
+ *
+ * Com `periodo`, filtra no SERVIDOR pela faixa — é o que permite consultar um
+ * mês antigo sem depender da janela das mais recentes (que, com o histórico
+ * grande, não alcançaria aquele mês e devolveria vazio sem avisar).
+ */
+export async function getMovimentacoesDetalhadas(limit = 300, periodo?: MovPeriodo): Promise<MovDetalhada[]> {
   const sel = 'id, numero, tipo, unidade_id, observacao, created_at, referencia_tipo, referencia_id, operacao_id, operador:concremrh_usuarios(nome), itens:concremrh_estoque_movimentacao_itens(variante_id, quantidade, direcao, saldo_anterior, saldo_posterior), documento:concremrh_estoque_entrada_documentos(id, storage_key, nome_original)';
-  const rows = unwrap<Array<Record<string, unknown>>>(await db.from('concremrh_estoque_movimentacoes').select(sel).order('created_at', { ascending: false }).limit(limit)) ?? [];
+  let q = db.from('concremrh_estoque_movimentacoes').select(sel).order('created_at', { ascending: false }).limit(limit);
+  // `lt` no fim (exclusivo) evita perder o último instante do período.
+  if (periodo) q = q.gte('created_at', periodo.inicio.toISOString()).lt('created_at', periodo.fim.toISOString());
+  const rows = unwrap<Array<Record<string, unknown>>>(await q) ?? [];
   return rows.map((r) => ({
     id: String(r.id), numero: String(r.numero), tipo: String(r.tipo), unidadeId: String(r.unidade_id),
     observacao: (r.observacao as string) ?? null, createdAt: String(r.created_at),

@@ -1,19 +1,26 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { getMovimentacoesDetalhadas, type MovDetalhada } from '../services/inventoryApi';
+import { mesRefRange } from '../domain/movementPeriod';
 import { useFardamentos } from './useFardamentos';
 import { periodoRange, type Periodo } from '../components/dashboard/derive';
 import { direcaoMov, totalPecas, type Direcao } from '../components/movements/movementMeta';
 
 const JANELA = 500;
+/** Um mês fechado é consultado no servidor, então cabe uma janela maior. */
+const JANELA_MES = 2000;
 const norm = (s: string) => (s ?? '').toLocaleLowerCase('pt-BR').normalize('NFD').replace(/\p{Diacritic}/gu, '');
 
 export type Ordenacao = 'recentes' | 'antigas' | 'maior_qtd' | 'numero' | 'tipo';
 export type Agrupamento = 'lista' | 'tipo' | 'unidade' | 'item' | 'responsavel';
 export interface MovFiltros {
-  periodo: Periodo | 'todos'; tipo: string; direcao: Direcao | ''; unidadeId: string; origem: string;
+  /** 'mes_ref' = mês/ano escolhido em `mesRef` (consultado no servidor). */
+  periodo: Periodo | 'todos' | 'mes_ref';
+  /** Competência 'YYYY-MM' quando `periodo === 'mes_ref'`. */
+  mesRef: string;
+  tipo: string; direcao: Direcao | ''; unidadeId: string; origem: string;
   varianteId: string; categoria: string; responsavel: string; comNf: boolean; comObs: boolean;
 }
-const FVAZIO: MovFiltros = { periodo: '30d', tipo: '', direcao: '', unidadeId: '', origem: '', varianteId: '', categoria: '', responsavel: '', comNf: false, comObs: false };
+const FVAZIO: MovFiltros = { periodo: '30d', mesRef: '', tipo: '', direcao: '', unidadeId: '', origem: '', varianteId: '', categoria: '', responsavel: '', comNf: false, comObs: false };
 
 export interface VarInfo { nome: string; codigo: string; tamanho: string | null; categoria: string | null; custo: number }
 
@@ -33,11 +40,25 @@ export function useInventoryMovements() {
 
   useEffect(() => { const t = setTimeout(() => { setBusca(buscaRaw); setPage(1); }, 350); return () => clearTimeout(t); }, [buscaRaw]);
 
+  // Mês fechado selecionado -> a faixa vai para a CONSULTA, não só para o filtro
+  // em memória. Sem isso, um mês anterior às 500 mais recentes viria vazio.
+  const mesRange = useMemo(
+    () => (filtros.periodo === 'mes_ref' ? mesRefRange(filtros.mesRef) : null),
+    [filtros.periodo, filtros.mesRef],
+  );
+
   const carregar = useCallback(async () => {
-    try { setLoading(true); setError(false); const rows = await getMovimentacoesDetalhadas(JANELA); if (!mounted.current) return; setMovs(rows); setAtualizadoEm(new Date()); }
+    try {
+      setLoading(true); setError(false);
+      const rows = mesRange
+        ? await getMovimentacoesDetalhadas(JANELA_MES, mesRange)
+        : await getMovimentacoesDetalhadas(JANELA);
+      if (!mounted.current) return;
+      setMovs(rows); setAtualizadoEm(new Date());
+    }
     catch (e) { console.error('Erro ao carregar movimentações:', e); if (mounted.current) setError(true); }
     finally { if (mounted.current) setLoading(false); }
-  }, []);
+  }, [mesRange]);
   useEffect(() => { mounted.current = true; carregar(); return () => { mounted.current = false; }; }, [carregar]);
 
   const varInfo = useMemo(() => {
@@ -48,7 +69,11 @@ export function useInventoryMovements() {
   const unidadeNome = useMemo(() => new Map(unidades.map((u) => [u.id, u.nome])), [unidades]);
   const custoDe = useCallback((vid: string) => varInfo.get(vid)?.custo ?? 0, [varInfo]);
 
-  const range = useMemo(() => (filtros.periodo === 'todos' ? null : periodoRange(filtros.periodo, atualizadoEm)), [filtros.periodo, atualizadoEm]);
+  const range = useMemo(() => {
+    if (filtros.periodo === 'todos') return null;
+    if (filtros.periodo === 'mes_ref') return mesRange;   // mesma faixa da consulta
+    return periodoRange(filtros.periodo, atualizadoEm);
+  }, [filtros.periodo, mesRange, atualizadoEm]);
 
   const filtradas = useMemo(() => {
     const q = norm(busca.trim());
@@ -122,12 +147,20 @@ export function useInventoryMovements() {
     variantes: fardamentos.map((f) => ({ id: f.variante.id, nome: `${f.variante.nome} (${f.variante.codigo_interno})` })),
   }), [movs, unidades, fardamentos]);
 
-  const setFiltro = <K extends keyof MovFiltros>(k: K, v: MovFiltros[K]) => { setFiltros((p) => ({ ...p, [k]: v })); setPage(1); };
+  const setFiltro = <K extends keyof MovFiltros>(k: K, v: MovFiltros[K]) => {
+    // Trocar de período por outro caminho abandona o mês fechado, para a interface
+    // não ficar com um chip aceso e um mês invisível competindo entre si.
+    setFiltros((p) => ({ ...p, [k]: v, ...(k === 'periodo' && v !== 'mes_ref' ? { mesRef: '' } : null) }));
+    setPage(1);
+  };
+
+  /** Seleciona um mês fechado (dispara consulta no servidor). */
+  const setMesRef = (mesRef: string) => { setFiltros((p) => ({ ...p, periodo: 'mes_ref', mesRef })); setPage(1); };
   const limpar = () => { setFiltros(FVAZIO); setBuscaRaw(''); setPage(1); };
 
   return {
     loading, error, refetch: carregar, atualizadoEm, janela: JANELA, totalCarregado: movs.length,
-    filtros, buscaRaw, setBusca: setBuscaRaw, setFiltro, limpar, ordenacao, setOrdenacao, agrupamento, setAgrupamento,
+    filtros, buscaRaw, setBusca: setBuscaRaw, setFiltro, setMesRef, mesRange, limpar, ordenacao, setOrdenacao, agrupamento, setAgrupamento,
     filtradas, pagina, page, setPage, pageSize, setPageSize, totalPaginas,
     stats, fluxo, opcoes, operacaoMap, varInfo, unidadeNome, custoDe, movs,
   };

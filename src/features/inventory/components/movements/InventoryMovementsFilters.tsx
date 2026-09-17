@@ -10,6 +10,9 @@ import { cn } from '@/lib/utils';
 import { MOVEMENT_TYPE_LABEL } from '../../domain/domainConstants';
 import { ORIGEM_LABEL, DIRECAO_LABEL } from './movementMeta';
 import { PERIODO_LABEL, type Periodo } from '../dashboard/derive';
+import { CompetenciaPicker } from '@/components/dashboard/CompetenciaPicker';
+import { MES_ANO_MIN, MES_ANO_MAX } from '../../domain/movementPeriod';
+import { competenciaLabelLong } from '@/features/dashboard/utils/dates';
 import type { MovFiltros, Ordenacao, Agrupamento } from '../../hooks/useInventoryMovements';
 
 const ALL = '__all__';
@@ -23,9 +26,11 @@ interface Props {
   filtros: MovFiltros; buscaRaw: string; opcoes: Opcoes; ordenacao: Ordenacao; agrupamento: Agrupamento; resultado: number;
   onSetBusca: (v: string) => void; onSetFiltro: <K extends keyof MovFiltros>(k: K, v: MovFiltros[K]) => void;
   onSetOrdenacao: (o: Ordenacao) => void; onSetAgrupamento: (a: Agrupamento) => void; onLimpar: () => void;
+  /** Seleciona um mês/ano fechado (consulta o servidor, fora da janela recente). */
+  onSetMesRef: (mesRef: string) => void;
 }
 
-export function InventoryMovementsFilters({ filtros, buscaRaw, opcoes, ordenacao, agrupamento, resultado, onSetBusca, onSetFiltro, onSetOrdenacao, onSetAgrupamento, onLimpar }: Props) {
+export function InventoryMovementsFilters({ filtros, buscaRaw, opcoes, ordenacao, agrupamento, resultado, onSetBusca, onSetFiltro, onSetOrdenacao, onSetAgrupamento, onLimpar, onSetMesRef }: Props) {
   const uNome = opcoes.unidades.find((u) => u.id === filtros.unidadeId)?.nome ?? '';
   const vNome = opcoes.variantes.find((v) => v.id === filtros.varianteId)?.nome ?? '';
   const chips: { rot: string; on: () => void }[] = [];
@@ -38,7 +43,11 @@ export function InventoryMovementsFilters({ filtros, buscaRaw, opcoes, ordenacao
   if (filtros.responsavel) chips.push({ rot: `Responsável: ${filtros.responsavel}`, on: () => onSetFiltro('responsavel', '') });
   if (filtros.comNf) chips.push({ rot: 'Com NF', on: () => onSetFiltro('comNf', false) });
   if (filtros.comObs) chips.push({ rot: 'Com observação', on: () => onSetFiltro('comObs', false) });
+  if (filtros.periodo === 'mes_ref' && filtros.mesRef) {
+    chips.push({ rot: `Mês: ${competenciaLabelLong(filtros.mesRef)}`, on: () => onSetFiltro('periodo', '30d') });
+  }
   const temFiltro = chips.length > 0 || filtros.periodo !== '30d' || buscaRaw.trim() !== '';
+
 
   const controles = (
     <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
@@ -69,6 +78,14 @@ export function InventoryMovementsFilters({ filtros, buscaRaw, opcoes, ordenacao
               className={cn('rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors', filtros.periodo === p ? 'bg-primary text-primary-foreground' : 'bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground')}>{perLabel(p)}</button>
           ))}
         </div>
+        <CompetenciaPicker
+          value={filtros.periodo === 'mes_ref' ? filtros.mesRef : ''}
+          onChange={onSetMesRef}
+          minYear={MES_ANO_MIN}
+          maxYear={MES_ANO_MAX}
+          placeholder="Mês/ano"
+          className={cn('w-[150px]', filtros.periodo === 'mes_ref' && 'border-primary/50 bg-primary/5 font-medium')}
+        />
         <div className="flex items-center gap-1.5">
           <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
           <Select value={ordenacao} onValueChange={(v) => onSetOrdenacao(v as Ordenacao)}><SelectTrigger className="h-9 w-40" aria-label="Ordenar"><SelectValue /></SelectTrigger><SelectContent>{ORDENS.map((o) => <SelectItem key={o.k} value={o.k}>{o.l}</SelectItem>)}</SelectContent></Select>
