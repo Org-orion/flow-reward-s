@@ -12,7 +12,7 @@ import { InventoryMovementsFilters } from '../components/movements/InventoryMove
 import { InventoryMovementsTable } from '../components/movements/InventoryMovementsTable';
 import { InventoryMovementDrawer } from '../components/movements/InventoryMovementDrawer';
 import { MovementGroups } from '../components/movements/MovementGroups';
-import { tipoMeta, direcaoMov, ORIGEM_LABEL, DIRECAO_LABEL } from '../components/movements/movementMeta';
+import { generateMovementHistoryReport } from '../domain/movementReport';
 import { formatDateTimeBR } from '@/lib/dateTime';
 import { competenciaLabelLong } from '@/features/dashboard/utils/dates';
 import { formatNumberBR } from '@/lib/formatters';
@@ -38,22 +38,18 @@ export function MovimentacoesView() {
     else if (k === 'ajustes') m.setFiltro('origem', 'AJUSTE');
   };
 
+  // Exporta o histórico JÁ FILTRADO como PDF (substitui o antigo CSV).
   const exportar = () => {
-    const cab = ['Número', 'Tipo', 'Data', 'Local', 'Item', 'Código', 'Qtd', 'Direção', 'Saldo anterior', 'Saldo posterior', 'Origem', 'Responsável', 'Observação', 'Documento', 'OperacaoId'];
-    const linhas: string[][] = [];
-    for (const mv of m.filtradas) for (const it of mv.itens) {
-      const v = m.varInfo.get(it.varianteId);
-      linhas.push([mv.numero, tipoMeta(mv.tipo).label, formatDateTimeBR(mv.createdAt), m.unidadeNome.get(mv.unidadeId) ?? '', v?.nome ?? '', v?.codigo ?? '', String(it.quantidade), DIRECAO_LABEL[it.direcao === 'IN' ? 'IN' : 'OUT'], String(it.saldoAnterior), String(it.saldoPosterior), mv.referenciaTipo ? (ORIGEM_LABEL[mv.referenciaTipo] ?? mv.referenciaTipo) : '', mv.operadorNome, mv.observacao ?? '', mv.documento ? 'NF' : '', mv.operacaoId ?? '']);
-    }
-    const csv = [cab, ...linhas].map((l) => l.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(';')).join('\r\n');
-    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'movimentacoes.csv'; a.click(); URL.revokeObjectURL(url);
+    generateMovementHistoryReport({
+      movs: m.filtradas, filtros: m.filtros, busca: m.buscaRaw, opcoes: m.opcoes,
+      stats: m.stats, fluxo: m.fluxo, varInfo: m.varInfo, unidadeNome: m.unidadeNome,
+    });
   };
 
   const acoes = (
     <div className="flex items-center gap-2">
       <Button variant="outline" className="gap-2" onClick={m.refetch}><RefreshCw className="h-4 w-4" /><span className="hidden sm:inline">Atualizar</span></Button>
-      {acesso.podeExportar && <Button className="gap-2" onClick={exportar} disabled={m.filtradas.length === 0}><Download className="h-4 w-4" /><span className="hidden sm:inline">Exportar histórico</span></Button>}
+      {acesso.podeExportar && <Button className="gap-2" onClick={exportar} disabled={m.filtradas.length === 0}><Download className="h-4 w-4" /><span className="hidden sm:inline">Baixar histórico (PDF)</span></Button>}
       <DropdownMenu>
         <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-9 w-9" aria-label="Mais ações"><MoreVertical className="h-4 w-4" /></Button></DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-48">

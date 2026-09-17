@@ -13,6 +13,7 @@ import { PERIODO_LABEL, type Periodo } from '../dashboard/derive';
 import { CompetenciaPicker } from '@/components/dashboard/CompetenciaPicker';
 import { MES_ANO_MIN, MES_ANO_MAX } from '../../domain/movementPeriod';
 import { competenciaLabelLong } from '@/features/dashboard/utils/dates';
+import { descreverFiltrosMov } from '../../domain/movementFilters';
 import type { MovFiltros, Ordenacao, Agrupamento } from '../../hooks/useInventoryMovements';
 
 const ALL = '__all__';
@@ -31,18 +32,12 @@ interface Props {
 }
 
 export function InventoryMovementsFilters({ filtros, buscaRaw, opcoes, ordenacao, agrupamento, resultado, onSetBusca, onSetFiltro, onSetOrdenacao, onSetAgrupamento, onLimpar, onSetMesRef }: Props) {
-  const uNome = opcoes.unidades.find((u) => u.id === filtros.unidadeId)?.nome ?? '';
-  const vNome = opcoes.variantes.find((v) => v.id === filtros.varianteId)?.nome ?? '';
-  const chips: { rot: string; on: () => void }[] = [];
-  if (filtros.tipo) chips.push({ rot: `Tipo: ${MOVEMENT_TYPE_LABEL[filtros.tipo as keyof typeof MOVEMENT_TYPE_LABEL] ?? filtros.tipo}`, on: () => onSetFiltro('tipo', '') });
-  if (filtros.direcao) chips.push({ rot: `Direção: ${DIRECAO_LABEL[filtros.direcao]}`, on: () => onSetFiltro('direcao', '') });
-  if (filtros.unidadeId) chips.push({ rot: `Local: ${uNome}`, on: () => onSetFiltro('unidadeId', '') });
-  if (filtros.origem) chips.push({ rot: `Origem: ${ORIGEM_LABEL[filtros.origem] ?? filtros.origem}`, on: () => onSetFiltro('origem', '') });
-  if (filtros.categoria) chips.push({ rot: `Categoria: ${filtros.categoria}`, on: () => onSetFiltro('categoria', '') });
-  if (filtros.varianteId) chips.push({ rot: `Item: ${vNome}`, on: () => onSetFiltro('varianteId', '') });
-  if (filtros.responsavel) chips.push({ rot: `Responsável: ${filtros.responsavel}`, on: () => onSetFiltro('responsavel', '') });
-  if (filtros.comNf) chips.push({ rot: 'Com NF', on: () => onSetFiltro('comNf', false) });
-  if (filtros.comObs) chips.push({ rot: 'Com observação', on: () => onSetFiltro('comObs', false) });
+  // Rótulos vêm da MESMA função usada pelo PDF (domain/movementFilters), para a
+  // tela e o relatório nunca descreverem filtros diferentes.
+  const chips: { rot: string; on: () => void }[] = descreverFiltrosMov(filtros, opcoes).map((f) => ({
+    rot: f.rotulo,
+    on: () => onSetFiltro(f.chave, (f.chave === 'comNf' || f.chave === 'comObs' ? false : '') as never),
+  }));
   if (filtros.periodo === 'mes_ref' && filtros.mesRef) {
     chips.push({ rot: `Mês: ${competenciaLabelLong(filtros.mesRef)}`, on: () => onSetFiltro('periodo', '30d') });
   }
