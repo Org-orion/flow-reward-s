@@ -115,9 +115,19 @@ export interface ReciboEntrega {
 
 const primeiro = <T,>(x: T | T[] | null | undefined): T | undefined => (Array.isArray(x) ? x[0] : (x ?? undefined));
 
+/**
+ * NOME DO RESPONSÁVEL: os joins abaixo apontam para a view
+ * `concremrh_usuarios_nomes` (id, nome), e NÃO para `concremrh_usuarios`.
+ *
+ * Motivo: a policy de leitura da tabela é `is_admin()`, então para usuário não
+ * administrador o join na tabela volta vazio e a interface mostra "—" no lugar
+ * do responsável. A view expõe só o nome e executa com privilégios do dono.
+ * Ver supabase/migrations/20260921000000_usuarios_nomes_view.sql.
+ */
+
 /** Dados completos de uma entrega para emissão do recibo (colaborador, operador, itens c/ código e custo). */
 export async function getEntregaRecibo(entregaId: string): Promise<ReciboEntrega> {
-  const sel = 'id, recibo, tipo, valor_compra, created_at, funcionario:concremrh_funcionarios(nome), operador:concremrh_usuarios(nome), unidade:concremrh_estoque_unidades(nome), itens:concremrh_estoque_entrega_itens(quantidade, variante:concremrh_estoque_variantes(nome, codigo_interno, custo_unitario))';
+  const sel = 'id, recibo, tipo, valor_compra, created_at, funcionario:concremrh_funcionarios(nome), operador:concremrh_usuarios_nomes(nome), unidade:concremrh_estoque_unidades(nome), itens:concremrh_estoque_entrega_itens(quantidade, variante:concremrh_estoque_variantes(nome, codigo_interno, custo_unitario))';
   const row = unwrap<Record<string, unknown>>(await db.from('concremrh_estoque_entregas').select(sel).eq('id', entregaId).single());
   const func = primeiro(row.funcionario as { nome?: string });
   const oper = primeiro(row.operador as { nome?: string });
@@ -192,14 +202,14 @@ function mapDevolucaoDetalhe(r: Record<string, unknown>): DevolucaoDetalhe {
 
 /** Devoluções de UMA entrega (histórico da entrega selecionada). */
 export async function getDevolucoesDaEntrega(entregaId: string): Promise<DevolucaoDetalhe[]> {
-  const sel = 'id, variante_id, quantidade, condicao, destino, reestocado, status, created_at, variante:concremrh_estoque_variantes(nome, codigo_interno), responsavel:concremrh_usuarios(nome), entrega:concremrh_estoque_entregas(recibo, unidade_id, funcionario:concremrh_funcionarios(nome))';
+  const sel = 'id, variante_id, quantidade, condicao, destino, reestocado, status, created_at, variante:concremrh_estoque_variantes(nome, codigo_interno), responsavel:concremrh_usuarios_nomes(nome), entrega:concremrh_estoque_entregas(recibo, unidade_id, funcionario:concremrh_funcionarios(nome))';
   const rows = unwrap<Array<Record<string, unknown>>>(await db.from('concremrh_estoque_devolucoes').select(sel).eq('entrega_id', entregaId).order('created_at', { ascending: false })) ?? [];
   return rows.map(mapDevolucaoDetalhe);
 }
 
 /** Devoluções recentes (todas as situações) — painel "últimas devoluções" + drawer. */
 export async function getDevolucoesRecentes(limit = 15): Promise<DevolucaoDetalhe[]> {
-  const sel = 'id, variante_id, quantidade, condicao, destino, reestocado, status, created_at, variante:concremrh_estoque_variantes(nome, codigo_interno), responsavel:concremrh_usuarios(nome), entrega:concremrh_estoque_entregas(recibo, unidade_id, funcionario:concremrh_funcionarios(nome))';
+  const sel = 'id, variante_id, quantidade, condicao, destino, reestocado, status, created_at, variante:concremrh_estoque_variantes(nome, codigo_interno), responsavel:concremrh_usuarios_nomes(nome), entrega:concremrh_estoque_entregas(recibo, unidade_id, funcionario:concremrh_funcionarios(nome))';
   const rows = unwrap<Array<Record<string, unknown>>>(await db.from('concremrh_estoque_devolucoes').select(sel).order('created_at', { ascending: false }).limit(limit)) ?? [];
   return rows.map(mapDevolucaoDetalhe);
 }
@@ -264,7 +274,7 @@ export interface MovPeriodo { inicio: Date; fim: Date }
  * grande, não alcançaria aquele mês e devolveria vazio sem avisar).
  */
 export async function getMovimentacoesDetalhadas(limit = 300, periodo?: MovPeriodo): Promise<MovDetalhada[]> {
-  const sel = 'id, numero, tipo, unidade_id, observacao, created_at, referencia_tipo, referencia_id, operacao_id, operador:concremrh_usuarios(nome), itens:concremrh_estoque_movimentacao_itens(variante_id, quantidade, direcao, saldo_anterior, saldo_posterior), documento:concremrh_estoque_entrada_documentos(id, storage_key, nome_original)';
+  const sel = 'id, numero, tipo, unidade_id, observacao, created_at, referencia_tipo, referencia_id, operacao_id, operador:concremrh_usuarios_nomes(nome), itens:concremrh_estoque_movimentacao_itens(variante_id, quantidade, direcao, saldo_anterior, saldo_posterior), documento:concremrh_estoque_entrada_documentos(id, storage_key, nome_original)';
   let q = db.from('concremrh_estoque_movimentacoes').select(sel).order('created_at', { ascending: false }).limit(limit);
   // `lt` no fim (exclusivo) evita perder o último instante do período.
   if (periodo) q = q.gte('created_at', periodo.inicio.toISOString()).lt('created_at', periodo.fim.toISOString());
@@ -290,7 +300,7 @@ export async function contarMovimentacoesMes(): Promise<number> {
 export interface MovVariante { numero: string; tipo: string; unidadeId: string; observacao: string | null; createdAt: string; operadorNome: string; quantidade: number; direcao: 'IN' | 'OUT'; saldoAnterior: number; saldoPosterior: number }
 /** Movimentações de UMA variante (drawer → aba Movimentações). */
 export async function getMovimentacoesPorVariante(varianteId: string, limit = 100): Promise<MovVariante[]> {
-  const sel = 'quantidade, direcao, saldo_anterior, saldo_posterior, movimentacao:concremrh_estoque_movimentacoes(numero, tipo, unidade_id, observacao, created_at, operador:concremrh_usuarios(nome))';
+  const sel = 'quantidade, direcao, saldo_anterior, saldo_posterior, movimentacao:concremrh_estoque_movimentacoes(numero, tipo, unidade_id, observacao, created_at, operador:concremrh_usuarios_nomes(nome))';
   const rows = unwrap<Array<Record<string, unknown>>>(await db.from('concremrh_estoque_movimentacao_itens').select(sel).eq('variante_id', varianteId).limit(limit)) ?? [];
   return rows.map((r) => {
     const m = (primeiro(r.movimentacao as Record<string, unknown>) ?? {}) as Record<string, unknown>;

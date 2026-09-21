@@ -3,7 +3,9 @@ import { Loader2, CheckCircle2, ShieldCheck, Printer, ArrowRight } from 'lucide-
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { formatNumberBR, formatCurrencyBRL } from '@/lib/formatters';
+import { formatNumberBR, formatCurrencyBRL, pluralizeBR } from '@/lib/formatters';
+import { formatDateTimeBR } from '@/lib/dateTime';
+import { DELIVERY_TYPE_LABEL } from '../../domain/domainConstants';
 import { imprimirRecibo } from '../../services/reciboImpressao';
 import type { DeliveryItemRow } from '../../hooks/useStockDelivery';
 import type { Funcionario } from '@/hooks/useFuncionarios';
@@ -74,22 +76,62 @@ export function StockDeliverySuccessDialog({ recibo, onOpenChange, onNova, onVer
         </DialogHeader>
         {recibo && (
           <div className="space-y-3">
-            <div className="rounded-lg border border-border/70 bg-muted/20 p-3 text-sm">
-              <div className="flex items-center justify-between gap-2"><span className="font-mono font-medium text-primary">{recibo.recibo}</span><span className="text-xs text-muted-foreground">{recibo.unidadeNome}</span></div>
-              <div className="mt-1 truncate font-medium text-foreground">{recibo.colaboradorNome}</div>
-              <div className="mt-2 flex items-center gap-4 text-sm"><span><strong className="tabular-nums">{formatNumberBR(recibo.itens.length)}</strong> itens</span><span className="text-status-warning"><strong className="tabular-nums">−{formatNumberBR(totalPecas)}</strong> peças</span></div>
+            <div className="overflow-hidden rounded-lg border border-border/70">
+              {/* Identificação: recibo + tipo da entrega */}
+              <div className="flex items-start justify-between gap-2 border-b border-border/60 bg-muted/30 px-3 py-2">
+                <span className="font-mono text-sm font-semibold text-primary">{recibo.recibo}</span>
+                <span className="shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
+                  {DELIVERY_TYPE_LABEL[recibo.tipo as keyof typeof DELIVERY_TYPE_LABEL] ?? recibo.tipo}
+                </span>
+              </div>
+
+              {/* Quem recebeu, onde e quando */}
+              <div className="px-3 py-2.5">
+                <p className="truncate font-medium text-foreground">{recibo.colaboradorNome}</p>
+                <dl className="mt-1.5 grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
+                  <Mini rot="Local de estoque" val={recibo.unidadeNome} />
+                  <Mini rot="Data" val={formatDateTimeBR(recibo.createdAt)} />
+                  <Mini rot="Emitido por" val={recibo.operadorNome} />
+                  {recibo.valorCompra != null && <Mini rot="Valor cobrado" val={formatCurrencyBRL(recibo.valorCompra)} />}
+                </dl>
+              </div>
+
+              {/* O que saiu — a informação principal de uma confirmação de baixa */}
+              <ul className="max-h-40 divide-y divide-border/40 overflow-y-auto border-t border-border/60">
+                {recibo.itens.map((it, i) => (
+                  <li key={`${it.codigo}-${i}`} className="flex items-center justify-between gap-2 px-3 py-1.5 text-sm">
+                    <span className="min-w-0 truncate text-foreground">
+                      {it.nome}
+                      {it.codigo && it.codigo !== '—' && <span className="ml-1 font-mono text-xs text-muted-foreground">{it.codigo}</span>}
+                    </span>
+                    <span className="shrink-0 font-semibold tabular-nums text-status-warning">−{formatNumberBR(it.quantidade)}</span>
+                  </li>
+                ))}
+              </ul>
+
+              {/* Totais com plural correto */}
+              <div className="flex items-center justify-between gap-2 border-t border-border/60 bg-muted/20 px-3 py-2 text-sm">
+                <span className="text-muted-foreground">{pluralizeBR(recibo.itens.length, 'item', 'itens')}</span>
+                <span className="font-semibold text-status-warning">−{pluralizeBR(totalPecas, 'peça', 'peças')}</span>
+              </div>
             </div>
+
             <Button className="w-full gap-2" onClick={() => imprimirRecibo(recibo, recibo.operadorNome)}><Printer className="h-4 w-4" /> Emitir recibo</Button>
           </div>
         )}
-        <DialogFooter className="flex-col gap-2 sm:flex-row">
-          <Button variant="ghost" onClick={onVoltar}>Fardamentos</Button>
+        <DialogFooter className="flex-col gap-2 sm:flex-row sm:justify-between">
+          <Button variant="ghost" onClick={onVoltar} className="sm:mr-auto">Fardamentos</Button>
           <Button variant="outline" onClick={onVerMovimentacoes}>Ver movimentações</Button>
-          <Button variant="outline" onClick={onNova}>Nova entrega</Button>
+          <Button variant="secondary" onClick={onNova}>Nova entrega</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
   );
+}
+
+/** Par rótulo/valor compacto do cartão de sucesso. */
+function Mini({ rot, val }: { rot: string; val: string }) {
+  return <div className="min-w-0"><dt className="text-muted-foreground">{rot}</dt><dd className="truncate font-medium text-foreground">{val}</dd></div>;
 }
 
 function Campo({ rot, val }: { rot: string; val: string }) {
