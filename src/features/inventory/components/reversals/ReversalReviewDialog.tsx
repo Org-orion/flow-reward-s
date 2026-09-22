@@ -106,4 +106,4 @@ export function ReversalReviewDialog({ alvo, onOpenChange, saving, saldoDe, cust
   );
 }
 
-function Campo({ rot, val }: { rot: string; val: string }) { return <div><dt className="text-xs text-muted-foreground">{rot}</dt><dd className="truncate font-medium text-foreground">{val}</dd></div>; }
+function Campo({ rot, val }: { rot: string; val: string }) { return <div className="min-w-0"><dt className="text-xs text-muted-foreground">{rot}</dt><dd className="truncate font-medium text-foreground">{val}</dd></div>; }

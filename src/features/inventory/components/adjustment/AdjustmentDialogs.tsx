@@ -95,5 +95,5 @@ export function AdjustmentSuccessDialog({ sucesso, onOpenChange, onNovo, onVerMo
 }
 
 function Campo({ rot, val }: { rot: string; val: string }) {
-  return <div><dt className="text-xs text-muted-foreground">{rot}</dt><dd className="font-medium text-foreground">{val}</dd></div>;
+  return <div className="min-w-0"><dt className="text-xs text-muted-foreground">{rot}</dt><dd className="font-medium text-foreground">{val}</dd></div>;
 }

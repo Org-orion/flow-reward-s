@@ -21,7 +21,7 @@ export function StockEntryReviewDialog({ open, onOpenChange, saving, uploading, 
           <DialogTitle>Revisar entrada</DialogTitle>
           <DialogDescription>A entrada atualizará os saldos da unidade selecionada e será registrada na movimentação e auditoria.</DialogDescription>
         </DialogHeader>
-        <div className="space-y-3">
+        <div className="min-w-0 space-y-3">
           <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
             <Campo rot="Unidade" val={unidade ?? '—'} />
             <Campo rot="Data de chegada" val={data ? formatDateBR(data) : '—'} />
@@ -81,5 +81,5 @@ export function StockEntrySuccessDialog({ sucesso, onOpenChange, onNova, onVerMo
 }
 
 function Campo({ rot, val }: { rot: string; val: string }) {
-  return <div><dt className="text-xs text-muted-foreground">{rot}</dt><dd className="font-medium text-foreground">{val}</dd></div>;
+  return <div className="min-w-0"><dt className="text-xs text-muted-foreground">{rot}</dt><dd className="font-medium text-foreground">{val}</dd></div>;
 }

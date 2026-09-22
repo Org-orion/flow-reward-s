@@ -28,7 +28,7 @@ export function StockDeliveryReviewDialog({ open, onOpenChange, saving, onConfir
           <DialogTitle>Revisar entrega</DialogTitle>
           <DialogDescription>A operação baixará o saldo da unidade, gerará uma movimentação de saída e emitirá um termo de responsabilidade.</DialogDescription>
         </DialogHeader>
-        <div className="space-y-3">
+        <div className="min-w-0 space-y-3">
           <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
             <Campo rot="Colaborador" val={funcionario?.nome ?? '—'} />
             <Campo rot="Empresa" val={funcionario?.empresa?.nome ?? '—'} />
@@ -75,11 +75,15 @@ export function StockDeliverySuccessDialog({ recibo, onOpenChange, onNova, onVer
           <DialogDescription>Saldo baixado, movimentação registrada e termo de responsabilidade emitido.</DialogDescription>
         </DialogHeader>
         {recibo && (
-          <div className="space-y-3">
+          // `min-w-0`: DialogContent é um grid e seus itens não encolhem abaixo
+          // do conteúdo (min-width: auto). Com `truncate` (white-space: nowrap)
+          // lá dentro, a largura mínima passaria a ser o texto inteiro e o
+          // cartão vazaria para fora do diálogo.
+          <div className="min-w-0 space-y-3">
             <div className="overflow-hidden rounded-lg border border-border/70">
               {/* Identificação: recibo + tipo da entrega */}
               <div className="flex items-start justify-between gap-2 border-b border-border/60 bg-muted/30 px-3 py-2">
-                <span className="font-mono text-sm font-semibold text-primary">{recibo.recibo}</span>
+                <span className="min-w-0 truncate font-mono text-sm font-semibold text-primary">{recibo.recibo}</span>
                 <span className="shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
                   {DELIVERY_TYPE_LABEL[recibo.tipo as keyof typeof DELIVERY_TYPE_LABEL] ?? recibo.tipo}
                 </span>
@@ -119,7 +123,7 @@ export function StockDeliverySuccessDialog({ recibo, onOpenChange, onNova, onVer
             <Button className="w-full gap-2" onClick={() => imprimirRecibo(recibo, recibo.operadorNome)}><Printer className="h-4 w-4" /> Emitir recibo</Button>
           </div>
         )}
-        <DialogFooter className="flex-col gap-2 sm:flex-row sm:justify-between">
+        <DialogFooter className="flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-between">
           <Button variant="ghost" onClick={onVoltar} className="sm:mr-auto">Fardamentos</Button>
           <Button variant="outline" onClick={onVerMovimentacoes}>Ver movimentações</Button>
           <Button variant="secondary" onClick={onNova}>Nova entrega</Button>
@@ -135,5 +139,5 @@ function Mini({ rot, val }: { rot: string; val: string }) {
 }
 
 function Campo({ rot, val }: { rot: string; val: string }) {
-  return <div><dt className="text-xs text-muted-foreground">{rot}</dt><dd className="truncate font-medium text-foreground">{val}</dd></div>;
+  return <div className="min-w-0"><dt className="text-xs text-muted-foreground">{rot}</dt><dd className="truncate font-medium text-foreground">{val}</dd></div>;
 }

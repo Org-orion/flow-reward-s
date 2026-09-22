@@ -103,4 +103,4 @@ function Bloco({ tone, titulo, nome, atual, final }: { tone: 'success' | 'info';
   const col = tone === 'success' ? 'text-success' : 'text-[hsl(217_90%_45%)]';
   return <div className={`rounded-lg border p-2.5 ${border}`}><div className="text-[11px] text-muted-foreground">{titulo}</div><div className="truncate text-sm font-medium text-foreground">{nome}</div><div className="mt-1 flex items-center gap-1 text-xs tabular-nums"><span className="text-muted-foreground">{formatNumberBR(atual)}</span><ArrowRight className={`h-3 w-3 ${col}`} /><span className="font-semibold text-foreground">{formatNumberBR(final)}</span></div></div>;
 }
-function Campo({ rot, val }: { rot: string; val: string }) { return <div><dt className="text-xs text-muted-foreground">{rot}</dt><dd className="truncate font-medium text-foreground">{val}</dd></div>; }
+function Campo({ rot, val }: { rot: string; val: string }) { return <div className="min-w-0"><dt className="text-xs text-muted-foreground">{rot}</dt><dd className="truncate font-medium text-foreground">{val}</dd></div>; }

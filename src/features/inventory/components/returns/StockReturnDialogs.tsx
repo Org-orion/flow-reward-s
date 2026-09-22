@@ -82,5 +82,5 @@ export function StockReturnSuccessDialog({ sucesso, onOpenChange, onNova, onVerM
 }
 
 function Campo({ rot, val }: { rot: string; val: string }) {
-  return <div><dt className="text-xs text-muted-foreground">{rot}</dt><dd className="truncate font-medium text-foreground">{val}</dd></div>;
+  return <div className="min-w-0"><dt className="text-xs text-muted-foreground">{rot}</dt><dd className="truncate font-medium text-foreground">{val}</dd></div>;
 }
