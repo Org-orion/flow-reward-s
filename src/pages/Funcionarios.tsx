@@ -20,6 +20,7 @@ import { useEmployeeFilters } from "@/features/employees/hooks/useEmployeeFilter
 import { useEmployeeSelection } from "@/features/employees/hooks/useEmployeeSelection";
 import { useEmployeeForm } from "@/features/employees/hooks/useEmployeeForm";
 import { useEmployeeImport } from "@/features/employees/hooks/useEmployeeImport";
+import { useEmployeeUpdateImport } from "@/features/employees/hooks/useEmployeeUpdateImport";
 import { checkEmployeeCompletion } from "@/features/employees/domain/employeeCompletion";
 import { getEmployeeEligibility } from "@/features/employees/domain/employeeEligibility";
 import { exportFuncionariosCsv } from "@/features/employees/domain/exportCsv";
@@ -36,6 +37,7 @@ import { EmployeesSkeleton } from "@/components/employees/EmployeesSkeleton";
 import { EmployeeDetailsDrawer } from "@/components/employees/EmployeeDetailsDrawer";
 import { EmployeeFormWizard } from "@/components/employees/EmployeeFormWizard";
 import { EmployeeImportWizard } from "@/components/employees/EmployeeImportWizard";
+import { EmployeeUpdateWizard } from "@/components/employees/EmployeeUpdateWizard";
 
 const STATUS_OPTIONS = ["Ativo", "Férias", "Licença", "Rescisão"];
 
@@ -81,6 +83,8 @@ export const Funcionarios = () => {
   const selection = useEmployeeSelection();
   const form = useEmployeeForm({ createFuncionario, updateFuncionario });
   const importState = useEmployeeImport({ empresas, setores, funcoes, categorias, bases, faixas, locaisDSS }, refetch);
+  const updateState = useEmployeeUpdateImport({ empresas, setores, funcoes, categorias, bases, faixas, locaisDSS }, refetch);
+  const [updateOpen, setUpdateOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [profileFuncionario, setProfileFuncionario] = useState<Funcionario | null>(null);
   const [bulkBusy, setBulkBusy] = useState(false);
@@ -129,6 +133,7 @@ export const Funcionarios = () => {
         lastUpdated={lastUpdated}
         onNew={form.openCreate}
         onImport={() => setImportOpen(true)}
+        onAtualizarCadastros={() => setUpdateOpen(true)}
         onDownloadTemplate={importState.downloadTemplate}
         onExportCsv={() => exportFuncionariosCsv(filtersState.filtered, "funcionarios.csv")}
       />
@@ -207,6 +212,7 @@ export const Funcionarios = () => {
       <EmployeeFormWizard form={form} empresas={empresas} setores={setores} funcoes={funcoes} categorias={categorias} bases={bases} faixas={faixas} locaisDSS={locaisDSS} />
 
       <EmployeeImportWizard open={importOpen} onOpenChange={setImportOpen} importState={importState} />
+      <EmployeeUpdateWizard open={updateOpen} onOpenChange={setUpdateOpen} estado={updateState} />
     </div>
   );
 };

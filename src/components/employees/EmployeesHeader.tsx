@@ -1,4 +1,4 @@
-import { Users, Plus, UploadCloud, MoreHorizontal, Download } from 'lucide-react';
+import { Users, Plus, UploadCloud, MoreHorizontal, Download, ClipboardCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { PageHeader } from '@/components/app/PageHeader';
@@ -10,12 +10,14 @@ interface EmployeesHeaderProps {
   lastUpdated: Date | null;
   onNew: () => void;
   onImport: () => void;
+  /** Abre a atualização de cadastros por planilha (completa quem já existe). */
+  onAtualizarCadastros: () => void;
   onDownloadTemplate: () => void;
   onExportCsv: () => void;
 }
 
 /** Cabeçalho compacto da Central de Gestão de Pessoas. */
-export function EmployeesHeader({ total, lastUpdated, onNew, onImport, onDownloadTemplate, onExportCsv }: EmployeesHeaderProps) {
+export function EmployeesHeader({ total, lastUpdated, onNew, onImport, onDownloadTemplate, onExportCsv, onAtualizarCadastros }: EmployeesHeaderProps) {
   const updated = lastUpdated ? formatDateTimeBR(lastUpdated) : null;
 
   const acesso = useResourceAccess('funcionarios');
@@ -45,6 +47,11 @@ export function EmployeesHeader({ total, lastUpdated, onNew, onImport, onDownloa
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
+                {acesso.podeImportar && acesso.podeEditar && (
+                  <DropdownMenuItem onClick={onAtualizarCadastros}>
+                    <ClipboardCheck className="mr-2 h-4 w-4" /> Atualizar cadastros por planilha
+                  </DropdownMenuItem>
+                )}
                 {acesso.podeImportar && (
                   <DropdownMenuItem onClick={onDownloadTemplate}>
                     <Download className="mr-2 h-4 w-4" /> Baixar modelo de importação
