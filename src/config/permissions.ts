@@ -52,7 +52,7 @@ export interface PermissionFieldDef {
   actions: FieldAction[];
 }
 
-export type PermissionModule = 'premiacoes' | 'cargos-salarios' | 'controle-estoque';
+export type PermissionModule = 'premiacoes' | 'cargos-salarios' | 'controle-estoque' | 'horas-extras';
 
 export interface PermissionResourceDef {
   /** Chave estável persistida nas concessões. NUNCA renomear sem migração. */
@@ -377,6 +377,56 @@ export const PERMISSION_RESOURCES: PermissionResourceDef[] = [
     route: '/controle-estoque/cadastros',
     actions: ['ver', 'criar', 'editar', 'excluir', 'exportar'],
     order: 90,
+  },
+
+  // ---------------------------------------------------------- Horas Extras
+  // Dado de ponto é dado pessoal de trabalhador: a separação entre VER o painel,
+  // IMPORTAR o arquivo e EXPORTAR o relatório é o que permite dar à chefia a
+  // consulta do seu departamento sem lhe dar o poder de alterar a base.
+  {
+    key: 'he_painel',
+    label: 'Horas Extras — Painel',
+    description: 'Indicadores, consolidados por departamento e por dia, matriz e ranking.',
+    section: 'horas_extras', module: 'horas-extras', group: 'Horas Extras',
+    route: '/horas-extras',
+    actions: ['ver', 'exportar'],
+    order: 10,
+  },
+  {
+    key: 'he_importar',
+    label: 'Horas Extras — Importar ponto',
+    description: 'Importação do arquivo do Secullum, com conferência obrigatória contra os totais do próprio arquivo.',
+    section: 'horas_extras', module: 'horas-extras', group: 'Horas Extras',
+    route: '/horas-extras/importar',
+    actions: ['ver', 'importar'],
+    order: 20,
+  },
+  {
+    key: 'he_relatorios',
+    label: 'Horas Extras — Relatórios',
+    description: 'Geração do relatório gerencial em HTML e PDF, completo ou avulso.',
+    section: 'horas_extras', module: 'horas-extras', group: 'Horas Extras',
+    route: '/horas-extras/relatorios',
+    actions: ['ver', 'exportar'],
+    order: 30,
+  },
+  {
+    key: 'he_historico',
+    label: 'Horas Extras — Histórico',
+    description: 'Importações feitas e relatórios gerados, com autoria e conciliação.',
+    section: 'horas_extras', module: 'horas-extras', group: 'Horas Extras',
+    route: '/horas-extras/historico',
+    actions: ['ver', 'excluir'],
+    order: 40,
+  },
+  {
+    key: 'he_configuracoes',
+    label: 'Horas Extras — Configurações',
+    description: 'Faixas do semáforo, rótulos de departamento e identidade do relatório.',
+    section: 'horas_extras', module: 'horas-extras', group: 'Horas Extras',
+    route: '/horas-extras/configuracoes',
+    actions: ['ver', 'editar'],
+    order: 50,
   },
 ];
 

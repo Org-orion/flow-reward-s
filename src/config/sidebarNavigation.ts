@@ -3,6 +3,7 @@ import {
   Settings, Building2, Layers, UserCog, Tag, Target, Factory, BarChart4, Gift,
   UserCheck, TrendingUpIcon, FileBarChart2, Briefcase, Shirt, PackagePlus, ClipboardCheck, Repeat2,
   SlidersHorizontal, ArrowLeftRight, BellRing, Replace, Undo2, Boxes, Truck, History, Percent,
+  Upload, FileText,
 } from 'lucide-react';
 import type { SidebarModuleId, SidebarNavItem, NavPermissionContext } from '@/types/navigation.types';
 
@@ -104,6 +105,15 @@ export const navigationByModule: Record<SidebarModuleId, SidebarNavItem[]> = {
     },
     { id: 'ce-cadastros', title: 'CADASTROS', href: '/controle-estoque/cadastros', icon: Settings, section: 'estoque', resource: 'est_cadastros' },
   ],
+  'horas-extras': [
+    // Todos os itens exigem a seção 'horas_extras' (admin bypassa via canAccess).
+    // Sem a seção, filterNavigation esconde o módulo inteiro — espelha o gate da rota.
+    { id: 'he-painel', title: 'PAINEL', href: '/horas-extras', icon: BarChart3, section: 'horas_extras', exactActive: true, resource: 'he_painel' },
+    { id: 'he-importar', title: 'Importar ponto', href: '/horas-extras/importar', icon: Upload, section: 'horas_extras', resource: 'he_importar' },
+    { id: 'he-relatorios', title: 'Relatórios', href: '/horas-extras/relatorios', icon: FileText, section: 'horas_extras', resource: 'he_relatorios' },
+    { id: 'he-historico', title: 'Histórico', href: '/horas-extras/historico', icon: History, section: 'horas_extras', resource: 'he_historico' },
+    { id: 'he-config', title: 'CONFIGURAÇÕES', href: '/horas-extras/configuracoes', icon: Settings, section: 'horas_extras', resource: 'he_configuracoes' },
+  ],
 };
 
 /**
@@ -112,6 +122,7 @@ export const navigationByModule: Record<SidebarModuleId, SidebarNavItem[]> = {
  */
 export function resolveSidebarModule(pathname: string): SidebarModuleId {
   if (pathname.startsWith('/controle-estoque')) return 'controle-estoque';
+  if (pathname.startsWith('/horas-extras')) return 'horas-extras';
   if (pathname.startsWith('/cargos-salarios')) return 'cargos-salarios';
   return 'premiacoes';
 }
@@ -121,6 +132,7 @@ export const moduleHome: Record<SidebarModuleId, string> = {
   premiacoes: '/premiacoes',
   'cargos-salarios': '/cargos-salarios',
   'controle-estoque': '/controle-estoque',
+  'horas-extras': '/horas-extras',
 };
 
 /** Item ativo: exato para raízes marcadas; senão, por prefixo de rota. */

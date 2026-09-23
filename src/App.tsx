@@ -36,6 +36,7 @@ import FuncionariosCargosSalarios from "./pages/cargos-salarios/Funcionarios";
 import ControleEstoque from "./pages/controle-estoque/ControleEstoque";
 import { IndicadoresRH } from "./pages/IndicadoresRH";
 import Usuarios from "./pages/cadastros/Usuarios";
+import HorasExtras from "./pages/horas-extras/HorasExtras";
 
 const queryClient = new QueryClient();
 
@@ -258,6 +259,34 @@ const App = () => (
             <Route path="/controle-estoque/cadastros" element={
               <ProtectedRoute section="estoque" resource="est_cadastros">
                 <MainLayout><ControleEstoque /></MainLayout>
+              </ProtectedRoute>
+            } />
+
+            {/* Horas Extras — acesso pela SEÇÃO 'horas_extras' (admin bypassa).
+                Ponto é dado pessoal: a concessão é caso a caso em Usuários e Acessos. */}
+            <Route path="/horas-extras" element={
+              <ProtectedRoute section="horas_extras" resource="he_painel">
+                <MainLayout><HorasExtras /></MainLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/horas-extras/importar" element={
+              <ProtectedRoute section="horas_extras" resource="he_importar">
+                <MainLayout><HorasExtras /></MainLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/horas-extras/relatorios" element={
+              <ProtectedRoute section="horas_extras" resource="he_relatorios">
+                <MainLayout><HorasExtras /></MainLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/horas-extras/historico" element={
+              <ProtectedRoute section="horas_extras" resource="he_historico">
+                <MainLayout><HorasExtras /></MainLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/horas-extras/configuracoes" element={
+              <ProtectedRoute section="horas_extras" resource="he_configuracoes">
+                <MainLayout><HorasExtras /></MainLayout>
               </ProtectedRoute>
             } />
 

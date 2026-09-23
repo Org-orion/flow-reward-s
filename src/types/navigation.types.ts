@@ -2,7 +2,7 @@ import type { LucideIcon } from 'lucide-react';
 import type { SectionKey } from '@/contexts/AuthContext';
 
 /** Módulos que possuem árvore de navegação própria na sidebar global. */
-export type SidebarModuleId = 'premiacoes' | 'cargos-salarios' | 'controle-estoque';
+export type SidebarModuleId = 'premiacoes' | 'cargos-salarios' | 'controle-estoque' | 'horas-extras';
 
 /**
  * Item de navegação da sidebar global. Apenas DADOS — o componente que

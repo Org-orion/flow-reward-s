@@ -8,10 +8,10 @@ import {
 
 export type UserPerfil = 'admin' | 'rh' | 'sesmt' | 'producao' | 'custom';
 
-export type SectionKey = 'dashboard' | 'rh' | 'sesmt' | 'producao' | 'premiacoes' | 'cadastros' | 'cargos_salarios' | 'estoque';
+export type SectionKey = 'dashboard' | 'rh' | 'sesmt' | 'producao' | 'premiacoes' | 'cadastros' | 'cargos_salarios' | 'estoque' | 'horas_extras';
 
 export const ALL_SECTIONS: SectionKey[] = [
-  'dashboard', 'rh', 'sesmt', 'producao', 'premiacoes', 'cadastros', 'cargos_salarios', 'estoque',
+  'dashboard', 'rh', 'sesmt', 'producao', 'premiacoes', 'cadastros', 'cargos_salarios', 'estoque', 'horas_extras',
 ];
 
 // Quais seções dão acesso a cada módulo do Hub
@@ -20,6 +20,7 @@ export const HUB_MODULE_SECTIONS: Record<string, SectionKey[]> = {
   cargos_salarios:  ['cargos_salarios'],
   controle_estoque: ['estoque'],
   indicadores_rh:   ['dashboard', 'rh'],
+  horas_extras:     ['horas_extras'],
 };
 
 export interface UserProfile {

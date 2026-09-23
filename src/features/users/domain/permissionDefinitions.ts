@@ -32,6 +32,8 @@ export const PERMISSION_DEFS: PermissionDef[] = [
   { key: 'premiacoes', label: 'Premiações', description: 'Processamento e relatórios de premiação.', group: 'operacao', sensitivity: 'sensivel', order: 6, route: '/premiacoes' },
   { key: 'cadastros', label: 'Cadastros', description: 'Cadastros mestres, incluindo Usuários e Acessos.', group: 'administracao', sensitivity: 'sensivel', order: 7, route: '/premiacoes/cadastros' },
   { key: 'cargos_salarios', label: 'Cargos e Salários', description: 'Módulo de cargos e salários (Cargos).', group: 'administracao', sensitivity: 'sensivel', order: 8, route: '/cargos-salarios' },
+  // Ponto é dado pessoal de trabalhador (LGPD) — seção sensível, concedida caso a caso.
+  { key: 'horas_extras', label: 'Horas Extras', description: 'Ponto diário do Secullum: importação, painel e relatórios de horas extras.', group: 'operacao', sensitivity: 'sensivel', order: 9, route: '/horas-extras' },
 ];
 
 const BY_KEY = new Map<string, PermissionDef>(PERMISSION_DEFS.map(d => [d.key, d]));
