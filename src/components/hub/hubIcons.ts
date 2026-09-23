@@ -1,4 +1,4 @@
-import { Trophy, Briefcase, BarChart3, Boxes, PackageSearch, type LucideIcon } from 'lucide-react';
+import { Trophy, Briefcase, BarChart3, Boxes, PackageSearch, Clock, type LucideIcon } from 'lucide-react';
 
 /**
  * Resolve o nome de ícone vindo do banco (`concremrh_hr_applications.icon`) para
@@ -11,6 +11,7 @@ const HUB_ICONS: Record<string, LucideIcon> = {
   BarChart3,
   Boxes,
   PackageSearch,
+  Clock,
 };
 
 export function resolveHubIcon(icon: string | null | undefined): LucideIcon {
