@@ -21,6 +21,22 @@ export function baixarTexto(conteudo: string, nomeArquivo: string, mime = 'text/
 
 export type ResultadoImpressao = 'ok' | 'bloqueado';
 
+/** Janela nova onde o relatório é escrito. Injetável para teste. */
+export type AbrirJanela = () => Window | null;
+
+/**
+ * NÃO passar `noopener` nem `noreferrer` aqui.
+ *
+ * Com qualquer um dos dois, `window.open` devolve `null` POR ESPECIFICAÇÃO —
+ * a janela abre, mas o chamador não recebe a referência. O efeito é o pior
+ * possível: uma janela em branco abre e o sistema, sem a referência, conclui
+ * que foi bloqueada e avisa o usuário. Foi exatamente esse o defeito.
+ *
+ * Não há risco a compensar: o documento escrito ali é gerado por nós e não
+ * contém nenhum script.
+ */
+const abrirPadrao: AbrirJanela = () => window.open('', '_blank', 'width=1100,height=900');
+
 /**
  * Abre o relatório em uma janela nova e chama a impressão do navegador, onde o
  * usuário escolhe "Salvar como PDF". O nome sugerido do arquivo vem do
@@ -29,8 +45,8 @@ export type ResultadoImpressao = 'ok' | 'bloqueado';
  * Devolve 'bloqueado' quando o navegador barra a janela — nesse caso a tela
  * oferece o download do .html, que imprime igual.
  */
-export function imprimirHtml(html: string): ResultadoImpressao {
-  const janela = window.open('', '_blank', 'noopener,noreferrer,width=1100,height=900');
+export function imprimirHtml(html: string, abrirJanela: AbrirJanela = abrirPadrao): ResultadoImpressao {
+  const janela = abrirJanela();
   if (!janela) return 'bloqueado';
 
   janela.document.open();
